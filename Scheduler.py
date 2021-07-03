@@ -1,12 +1,15 @@
 from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.coordinates as coord
 import astropy.unit as u
-from astropy import time
+from astropy.time import Time
+import time
+import sqlite3
+import sched
 
-controller = Controller()
-checks = Checks()
+#Function imports from the same directory
+from Helper_funcs import dprint, sqlite_retrieve_table
 
-def Scheduler():
+class Scheduler:
     """
     Overarching class taking care of Scheduling
     - Image calibration and other controls will be contained to seperate Classes
@@ -14,15 +17,25 @@ def Scheduler():
 
     https://observatorycontrolsystem.github.io/
     """
-    def __init__:
+    def __init__(self, Controller):
         """
         AsCOM or INDI python bindings for controling the observatory
-        https://www.indilib.org/get-indi/download-ubuntu.html
+        https://www.indilib.org/develop/indi-python-bindings.html
         ASCOM ALPACA for communication
         """
         #List which will contain all observations
         self.schedule = []
+        self.Dome = Controller.Dome
+        self.Telescope = Controller.Telescope
+        self.con = Controller.con
         self.location = EarthLocation(53.3845258962902, 6.23475766593151) #Lon Lat of observatory (currently guessed)
+        self.cur = self.con.cursor()
+        dprint('Retrieving Scheduling data')
+        self.objects = sqlite_retrieve_table(self.cur, 'Schedule')
+        for i in range(len(self.objects)):
+            self.determine_priority(self.objects[i])
+        order = self.do_tonight()
+        dprint('Created observing Schedule in order: {}'.format(order))
 
 
     def determine_priority(self, obj):
@@ -83,7 +96,7 @@ def Scheduler():
         Function determining which observations will occure to maximize observing time per night
         #TODO: Not sure how to do this one
         """
-
+        
 
 
         ### To get position of objects
@@ -105,29 +118,19 @@ def Scheduler():
         If all checks are passed opens dome
         and starts observing
         """
-
+        #sched.scheduler(time.monotonic(),) #TODO: Check if this could be useful
         #Check that telescope is allowed to observe
-        self.check_weather()
-
-        if dome == 'closed': #TODO: Change from pseudo to actual code
-            dome.open() 
 
         for i in range(number_of_exposures):
-            while observing: #TODO: change condition to expected length of observing
-                if sun_close == True:
-                    now = time.Time.now()
-                    sun_now = coord.get_sun(now)
-                    sun_next = coord.get_sun(now+time.TimeDelta(30*)) #TODO: check that addative operation of Time and TimeDelta works
-                check_weather()
-                time.sleep(10)
+            while self.Dome.open: 
+                #TODO: Start imaging
+            while not self.Dome.open:
+                time.sleep(60)
+                #TODO: Add condition in case object is not visible anymore
+
+                
 
 
-
-
-    def check_weather(self):
-        """
-        Function to determine wheter it is safe to observe
-        """
         
 
 
@@ -145,3 +148,7 @@ def Scheduler():
         Uses seperate script in background (preferably by doing computation while data is being collected) run as second
         process to compute Bias, Dark, and flat
         """
+
+
+
+

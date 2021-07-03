@@ -2,29 +2,14 @@
 
 import multiprocessing
 import signal
-
+import sys
 
 #Custom function imports
-from .Checks import Checks
-from .Controller import Controller
-from .Scheduler import Scheduler
-
-class Logger(object):
-    '''Class that redirects output to terminal and log file
-    https://stackoverflow.com/questions/20525587/python-logging-in-multiprocessing-attributeerror-logger-object-has-no-attrib'''
-    def __init__(self):
-        self.terminal = sys.stdout
-        self.log = open("Operations_log_{}".format(datetime.date.today()), 'a')
-    
-    def __getattr__(self, attr):
-        return getattr(self.terminal, attr)
-
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)  
-        
-    def flush(self):
-        pass  
+from Checks import Checks
+from Controller import Controller
+from Scheduler import Scheduler
+from Helper_funcs import dprint, Logger
+ 
 
 class Process(multiprocessing.Process):
     def __init__(self, id, *args):
@@ -43,30 +28,30 @@ class Process(multiprocessing.Process):
         if self.id == 0:
             self.Controller = Controller()
         if self.id == 1: #TODO: Initiate relevant functions within self.keyboard_interrupt(), for all 3 id's
-            self.Check = Checks
-            self.keyboard_interrupt(self.Check, *self.args)
+            self.Check = Checks()
         if self.id == 2:
             self.Scheduler = Scheduler()
+        self.keyboard_interrupt(self.Check, *self.args)
 
     def keyboard_interrupt(self, func, *args):
         """Helper function, executes func until keyboard interrupt"""
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         while not self.exit.is_set():
             func(*args)
-        print("Process exited")
-
+        dprint("Process exited")
 
 
 if __name__ == "__main__":
-    import sys
-    #Below so that terminal output gets written to log file and terminal
-    sys.stdout = Logger()
+    #Pass output to logger so that it gets printed and saved
+    sys.stdout = Logger(name="Operations_log_{}".format(datetime.date.today()))
+    #initiating sub processes
     controller = Process(0)
     controller.start()
     check = Process(1, controller)
     check.start()
-    scheduler = Process(2)
+    scheduler = Process(2, controller)
     scheduler.start()
+
 
 
 
