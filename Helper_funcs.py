@@ -129,3 +129,44 @@ def sqlite_get_tables(conn):
     cursor.close()
     return tables
 
+
+
+
+
+
+
+
+
+"""
+General Helper Functions for system interaction
+
+
+
+
+
+"""
+
+
+try:
+    from win10toast import ToastNotifier
+except:
+    print('wind10toast not installed')
+
+try:
+    from plyer import notification
+except:
+    print('plyer not installed')
+
+
+def desktop_notifier(message, Notification_name="Notification"):
+    """
+    Creates desktop notification
+    ----------
+    message --> str: The message to be sent
+    Notification_name --> str: Name of the Notification
+    """
+    try:
+        notify = ToastNotifier()
+        notify.show_toast("Notification", message,icon_path=None,duration=20)
+    except:
+        notification.notify(title=Notification_name, message=message,app_icon=None,timeout=20)
