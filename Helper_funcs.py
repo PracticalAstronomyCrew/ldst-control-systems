@@ -4,7 +4,40 @@ Custom functions for output and logging
 from sqlite3.dbapi2 import Cursor
 import sys
 import sqlite3
+import time
+import random
+import numpy as np
 
+
+"""
+Telescope Specific functions
+
+add_randome_data --> Adds 99 random observations to be scheduled for Messier objects 1-99
+
+
+"""
+
+
+def add_randome_data():
+    #Create and add random dataset to Database:
+    connect = sqlite3.connect('Database.db')
+    with connect:
+        connect.execute("DROP TABLE Schedule")
+        connect.execute("""CREATE TABLE Schedule
+            (object, time_sensitive, Observer_type, Rarity, total_length, Submission_Date, Completed_by, priority)""")
+    observer_types =  ['Moderator', 'OA', 'Staff','Student (Thesis)','Student','Outreach/schools','Public']
+    obj = ['M'+str(int(i)) for i in np.linspace(1,99, 99)]
+    time_sensitive = [True if i==1 else False for i in np.random.randint(0,2,99)] 
+    Observer_type = [observer_types[i] for i in np.random.randint(0,7,99)]
+    Rarity = np.random.randint(1,99,99)
+    #nr. of. frames * 3 (rgb) * exp.time(multiple of 5 with max 30s) + 60 time to move telescope and initiate
+    total_length = np.random.randint(1,15,99)*3*np.random.randint(1,6)*5+60
+    #In order day - month - year
+    Submission_Date = [random_date("1-1-2020", "5-7-2021", random.random()) for i in range(99)]
+    Completed_by = [random_date("5-7-2021", "30-12-2021", random.random()) for i in range(99)]
+    Random_Schedule = [[obj[i], time_sensitive[i], Observer_type[i],Rarity[i],total_length[i],Submission_Date[i], Completed_by[i],None] for i in range(99)]
+    for i in range(99):
+        sqlite_add_to_table(connect, 'Schedule', Random_Schedule[i])
 
 
 
@@ -71,6 +104,7 @@ sqlite_get_tables(conn) ---> Returns list of tables
 def sqlite_retrieve_table(connect, table):
     """
     Retrieves all data from passed sqlite table and returns list of dictionary object
+    performs type conversions specific for telescope schedule
     -------------
     connect --> sqlite3.connect(Datbase)
     table --> str: table name
@@ -84,6 +118,7 @@ def sqlite_retrieve_table(connect, table):
         if len(res) != 0:
             for row in res:
                 rows.append({dict_names[i]:row[i] for i in range(len(dict_names))})
+            rows = [{key:(rows[i][key] if key=='Observer_type' or  key=='object' or key=='time_sensitive' or key=='priority' or key=='Completed_by' or key=='Submission_Date' else int(rows[i][key])) for key in rows[i]} for i in range(len(rows))]
         else:
             dprint('file is empty')
     return rows
@@ -128,4 +163,36 @@ def sqlite_get_tables(conn):
     ]
     cursor.close()
     return tables
+
+
+
+
+"""
+Time functions
+"""
+import random
+import time
+    
+def str_time_prop(start, end, time_format, prop):
+    """Get a time at a proportion of a range of two formatted times.
+
+    start and end should be strings specifying times formatted in the
+    given format (strftime-style), giving an interval [start, end].
+    prop specifies how a proportion of the interval to be taken after
+    start.  The returned time will be in the specified format.
+    """
+
+    stime = time.mktime(time.strptime(start, time_format))
+    etime = time.mktime(time.strptime(end, time_format))
+
+    ptime = stime + prop * (etime - stime)
+
+    return time.strftime(time_format, time.localtime(ptime))
+
+def random_date(start, end, prop):
+    """
+    Returns random date between the two specified
+    """
+    return str_time_prop(start, end, '%d-%m-%Y', prop)
+    
 

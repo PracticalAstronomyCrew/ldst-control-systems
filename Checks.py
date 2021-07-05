@@ -50,6 +50,8 @@ class Checks:
     def check_weather(self):
         """
         Gets data from weather station and closes dome in case of issues
+
+        Not required!
         """
         get_data_from_weather_station() #TODO: 
         if weather_ok:
@@ -80,3 +82,4 @@ class Checks:
 
 
 
+#Get sunset and sunrise form astropy.time or others
