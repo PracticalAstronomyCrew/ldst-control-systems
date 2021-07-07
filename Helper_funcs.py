@@ -18,25 +18,33 @@ add_randome_data --> Adds 99 random observations to be scheduled for Messier obj
 """
 
 
-def add_randome_data():
+def add_randome_data(nr_of_points):
+    """
+    Helper Function adding randomised data to the Database
+    -------------
+    nr_of_points --> int: number of datapoints to add
+    """
     #Create and add random dataset to Database:
     connect = sqlite3.connect('Database.db')
     with connect:
-        connect.execute("DROP TABLE Schedule")
+        try:
+            connect.execute("DROP TABLE Schedule")
+        except:
+            print('Schedule does not exist')
         connect.execute("""CREATE TABLE Schedule
             (object, time_sensitive, Observer_type, Rarity, total_length, Submission_Date, Completed_by, priority)""")
     observer_types =  ['Moderator', 'OA', 'Staff','Student (Thesis)','Student','Outreach/schools','Public']
     obj = ['M'+str(int(i)) for i in np.linspace(1,99, 99)]
-    time_sensitive = [True if i==1 else False for i in np.random.randint(0,2,99)] 
-    Observer_type = [observer_types[i] for i in np.random.randint(0,7,99)]
-    Rarity = np.random.randint(1,99,99)
-    #nr. of. frames * 3 (rgb) * exp.time(multiple of 5 with max 30s) + 60 time to move telescope and initiate
-    total_length = np.random.randint(1,15,99)*3*np.random.randint(1,6)*5+60
+    time_sensitive = [True if i==1 else False for i in np.random.randint(0,2,nr_of_points)] 
+    Observer_type = [observer_types[i] for i in np.random.randint(0,7,nr_of_points)]
+    Rarity = np.random.randint(1,99,nr_of_points)
+    #nr. of. frames * exp.time(multiple of 5 with max 30m) + 2m to move telescope and initiate
+    total_length = np.random.randint(1,15,nr_of_points)*np.random.randint(1,6)*5+2
     #In order day - month - year
-    Submission_Date = [random_date("1-1-2020", "5-7-2021", random.random()) for i in range(99)]
-    Completed_by = [random_date("5-7-2021", "30-12-2021", random.random()) for i in range(99)]
-    Random_Schedule = [[obj[i], time_sensitive[i], Observer_type[i],Rarity[i],total_length[i],Submission_Date[i], Completed_by[i],None] for i in range(99)]
-    for i in range(99):
+    Submission_Date = [random_date("1-1-2020", "5-7-2021", random.random()) for i in range(nr_of_points)]
+    Completed_by = [random_date("5-7-2021", "30-12-2021", random.random()) for i in range(nr_of_points)]
+    Random_Schedule = [[obj[i], time_sensitive[i], Observer_type[i],Rarity[i],total_length[i],Submission_Date[i], Completed_by[i],None] for i in range(nr_of_points)]
+    for i in range(nr_of_points):
         sqlite_add_to_table(connect, 'Schedule', Random_Schedule[i])
 
 

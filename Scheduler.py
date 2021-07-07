@@ -1,12 +1,14 @@
+from re import L
 from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.coordinates as coord
 #import astropy.unit as u
 from astropy.time import Time
 import time
 import sqlite3
-import sched
+import requests
 import time
 import datetime as dt
+import ephem
 
 #Function imports from the same directory
 from Helper_funcs import dprint, sqlite_retrieve_table
@@ -101,6 +103,9 @@ class Scheduler:
         #base coordinate system
         altaz = AltAz(location=obs, obstime=observing_time)
         location = EarthLocation(53.3845258962902, 6.23475766593151) #Lon Lat of observatory (currently guessed)
+
+
+
 
         m1 = SkyCoord.from_name('M1')
         m1.transform_to(altaz)
@@ -208,30 +213,124 @@ def assign_priority(obj, today):
     obj['priority'] = float(priority)
     return obj
 
-def get_predicted_conditions():
+
+def get_predicted_conditions(): #TODO: Percentual cloud cover, how do we detect where the clouds are/what is observable? NN trained by human supervisor?
+    """ #TODO: Get sky brightness
+    Retrieves Data from OpenWeatherMap.org using API key #TODO: Get minute wise rain, #TODO: Get hourly moon position? i.e. avoid looking at objects close to the moon?
     """
-    Retrieves Data from https://www.goodtostargaze.com/ for location 9976 (Lauwersoog)
-    """
+    location = (53.38,6.23)
+    api_key='52695aff81b7b6e5708ab0e924b859f2'
+    url= "http://api.openweathermap.org/data/2.5/onecall?lat={}&lon={}&exclude=[current,minutely,alerts]&appid={}".format(*location, api_key)
+    weather = requests.get(url).json()
+    keys = ['Temperature', 'Pressure', 'Humidity', 'Dew_Point', 'Cloud_cover', 'Visibility', 'Wind_Speed','Wind_direction','Rain_Prob']
+    key_return = ['temp','pressure','humidity','dew_point','clouds','visibility','wind_speed','wind_deg','pop']
+    weather_cond = {keys[i]:[weather['hourly'][j][key_return[i]] for j in range(len(weather['hourly']))] for i in range(len(keys))}
+    weather_cond['Time']=[dt.datetime.utcfromtimestamp(i['dt']) for i in weather['hourly']]
+    weather_cond['Moon']=weather['daily'][0]['moon_phase']
+    weather_cond['Sunset']=dt.datetime.utcfromtimestamp(weather['daily'][0]['sunset'])
+    weather_cond['Sunrise']=dt.datetime.utcfromtimestamp(weather['daily'][1]['sunrise'])
+    return weather_cond
 
 
-def night_schedule():
+
+#FUNction definitionass
+def night_schedule(obj):
     """
     Function determining which observations will occure to maximize observing time per night
+    -------------
+    obj ---> Priority Sorted list of dict returned from func: assign_priority or otherwise sorted
 
     https://clearoutside.com/forecast/53.38/6.23
     """
-    observing_time = Time('2010-12-21 1:00')
-    #base coordinate system
-    
-    location = EarthLocation(53.3845258962902, 6.23475766593151) #Lon Lat of observatory (currently guessed)
+
     weather_data = get_predicted_conditions()
 
+    #Create Coordinate System
+    location = EarthLocation(53.3845258962902, 6.23475766593151) #Lon Lat of observatory (currently guessed)
+    t = Time([(weather_data['Sunset']+i*dt.timedelta(seconds=600)).strftime('%Y-%m-%dT%H:%M:%S') for i in range(24) if ((weather_data['Sunset']+i*dt.timedelta(seconds=600))<weather_data['Sunrise'])])
+    altaz = coord.AltAz(location=location, obstime=t)
+     
     #Sunrise + weather data https://medium.com/nexttech/how-to-use-the-openweathermap-api-with-python-c84cc7075cfc
-    m1 = SkyCoord.from_name('M1')
-    altaz = AltAz(location=obs, obstime=observing_time)
-    m1.transform_to(altaz)
+
+    for i in range(len(obj)):
+        obj[i] = check_min_conditions(obj[i],weather_data) #TODO: Check which function executes quicker and sort accordingly
+        if obj[i]['Possible']:
+            obj[i] = check_visible(obj[i],altaz,location)
+        else:
+            pass
+    return obj
+
+def check_visible(obj,altaz):
+    """
+    Checks if object is visible during the night
+    ---------
+    obj --> dict: object containing scheduling information
+    altaz --> Coordinate Frame of observatory
+    location --> EarthLocation: Location of Observatory
+    """
+    #base coordinate system
+    res = SkyCoord.from_name(obj['object'])
+    res = res.transform_to(altaz)
+    observing_points = [[res[i], i] for i in range(len(res)) if (res[i].alt>0)] #Check min angle
+    if len(observing_points)==0:
+        obj['Possible'] = False
+        return obj
+    else:
+        if observing_points[0][0].obstime.to_datetime()+dt.timedelta(seconds=obj['total_length']*60)<observing_points[-1][0].obstime.to_datetime():
+            obj['Possible'] = True
+            obj['Obs_time'] = [observing_points[0][0], observing_points[-1][0]]
+        else:
+            obj['Possible'] = False
+            return obj
+    if 'airmass' in obj['min_cond']:
+        res = res[observing_points[0][1]:observing_points[-1][1]] #Getting visible time range
+        airmass = res.secz
+        observing_times = [t[i] for i in range(len(airmass)) if airmass[i]<objects[0]['min_cond']['airmass']]
+        if len(observing_times)==0:
+            obj['Possible'] = False
+            return obj
+        else:
+            objects[0]['Obs_time'] = [observing_times[0].obstime,observing_times[-1].obstime]
+            obj['Possible'] = True
+    else: 
+        obj['Obs_time'] = [obj['Obs_time'][0].obstime, obj['Obs_time'][-1].obstime]
+
+    return obj
+
     
-    return 0
+def check_min_conditions(obj,weather):
+    """Check that minimum conditions are satisfied
+    --------
+    obj --> dict: object containing schedule information
+    weather --> dict: collected weather data for the night
+    """
+    #TODO: Add min condition to sqlite database as list
+    for i in obj['min_cond']:
+        if i[0] == 'min_moon_phase':
+            date = dt.date.today()
+            moon = ephem.Moon(date).moon_phase
+            if moon < i[1]:
+                weather['Moon'] = moon
+                obj['Possible'] = True
+        if i[0] == 'min_seeing': #TODO: Get min seeing - could use wind_gust, wind_speed, wind_deg of API return as proxy
+            boolean = [True if i[1] < weather['min_seeing'][j] else False for j in range(len(weather['min_seeing']))]
+            if len(boolean)<= (obj['Obs_time']/60): #Checking that the predicted seeing is good enough
+                obj['min_seeing_pred'] = boolean
+                obj['Possible'] = True
+            else:
+                obj['Possible'] = False
+                return obj
+        if i[0] == 'min_sky_brightness':
+            boolean = [True if i[1] < weather['min_sky_brightness'][j] else False for j in range(len(weather['min_sky_brightness']))]
+            if len(boolean)<= (obj['Obs_time']/60):
+                obj['min_sky_brightness_pred'] = boolean
+                obj['Possible'] = True
+            else:
+                obj['Possible'] = False
+                return obj
+    obj['Possible']=True
+    return obj
+
 
 
 def range_comp(ranges,priority_adder, to_check, priority):
@@ -254,12 +353,10 @@ def range_comp(ranges,priority_adder, to_check, priority):
         dprint("couldn't add to priority no appropriate range for {}".format(to_check))
         return backup
 
-
+from Helper_funcs import sqlite_retrieve_table
 def daily_Schedule(database, table):
     """
     Creates schedule every day prior to observing
-
-    #TODO: submission date key should be date string so do that later, also in retrieve_table!
     ---------
     database --> str: sqlite database
     table --> str: table name containing objects to be observed    
@@ -271,6 +368,6 @@ def daily_Schedule(database, table):
         i = assign_priority(i, today) #Pass date to compute days since and days to 
     content = sorted(content, key=lambda k: k['priority'], reverse=True)
     return content
-        
+
 
 
