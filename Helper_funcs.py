@@ -174,8 +174,6 @@ def sqlite_get_tables(conn):
 
 
 
-
-<<<<<<< HEAD
 """
 Time functions
 """
@@ -204,8 +202,6 @@ def random_date(start, end, prop):
     """
     return str_time_prop(start, end, '%d-%m-%Y', prop)
     
-
-=======
 
 
 
@@ -244,4 +240,3 @@ def desktop_notifier(message, Notification_name="Notification"):
         notify.show_toast("Notification", message,icon_path=None,duration=20)
     except:
         notification.notify(title=Notification_name, message=message,app_icon=None,timeout=20)
->>>>>>> 84154f45f60fe39a7e9ddfe4d0a37c9ca50aaffb
