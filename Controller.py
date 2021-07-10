@@ -1,112 +1,80 @@
-
-from astropy.coordinates import SkyCoord, EarthLocation
-import sqlite3
-import datetime as dt
-
-#Function imports from the same directory
-from Helper_funcs import dprint, sqlite_retrieve_table
-
 """
-INDI or ASCOM?
-https://www.indilib.org/develop/indi-python-bindings.html
-
-https://www.ascom-standards.org/About/Projects.html
-
+Interacting with the windows software, must be started from python script to work
 """
 
-class Dome:
-    def __init__(self,obs_status):
-        """
-        Class to control the dome
-        """
-        #Check if the observatory has been used without registration
-        res = self.check_state()
-        for key in res:
-            if res[key] != obs_status[key]:
-                dprint('Observatory has been used without registration')
-        self.open=(True if obs_status['dome_status']=='open' else False)
+from pywinauto.application import Application #High level API to interact with windows application using Win32 API and MS UI Automation
+from pywinauto.findwindows import ElementNotFoundError
+from Helper_funcs import dprint
 
-    def open(self):
+class GUI_interaction:
+    def __init__(self): #TODO: Time init after cpmpletion so that all can be launched prior to sun down
         """
-        Open's the dome
+        Initiates all relevant window and sets them up for usage sequentially, stores window information for later control of telescope and dome
         """
-        #TODO:
-        self.open = True
-        self.direction = [left_ang, right_ang]
+        self.apps = {} #Dictionary containing all window interaction objects
 
-    def close(self):
-        """
-        Closes the Dome
-        """
-        #TODO:
-        self.open = False
-        #Still get the direction
-        self.direction = [left_ang, right_ang]
-    
-    def check_state(self):
-        """
-        Retrieve wheter or not open and angle of the dome
-        """
-        #TODO:
-
-    def rotate(self):
-        """
-        Rotates the Dome
-        """
-        #TODO:
-        self.direction = [left_ang, right_ang]
-
-
-
-
-
-class Telescope:
-    def __init__(self,obs_status):
-        """
-        Class to control Telescope
-        """
-        res = self.check_state()
-        for key in res:
-            if res[key] != obs_status[key]:
-                dprint('Observatory has been used without registration')
-
-    
-    def slew(self, alt, az):
-        """Slews the telescope and writes new orientation to self.orientation"""
-        #TODO:
-        self.orientation = [alt, az]
-
-    def get_direction(self):
-        """Gets the direction the telescope is currently looking towards"""
-        #TODO: 
-
-    def start_imaging(self,im_nr, exp_time):
-        """
-        Starts observational sequence
-        ------------------
-        in_nr --> int: Number of images to take
-        exp_time --> int/list: Exposure time of each image (seconds)
-        """
-        for i in range(im_nr):
-            if type(exp_time)==int:
-                #TODO:
-                do_the_thing()
-            if type(exp_time)==list:
-                #TODO:
-                do_the_thing(exp_time[i])
-
-
-
-class Controller:
-    def __init__(self):
-        """Packager for controll classes"""
-        self.con = sqlite3.connect('Database.db')
-        #Get previous usage data to see if the telescope has been used
-        try:
-            dat = sqlite_retrieve_table(self.con,'observatory_status')[-1]
+        #           Set up AAG CloudWatcher ---> weather station
+        try:   #TODO: check if flag: allow_magic_lookup=False should be added due to ambigiosity
+            app = Application(backend="uia").start('C:\Program Files (x86)\AAG_CloudWatcher.exe') #TODO: Check which backends to use
         except:
-            dprint('No prior usage registered')
-            dat = {key: None for key in sqlite_get_columns(self.con, 'observatory_status').strip('()').split(', ')}
-        self.Dome = Dome(dat)
-        self.Telescope = Telescope(dat)
-        
+            app = Application(backend="win32").start('C:\Program Files (x86)\AAG_CloudWatcher.exe') #TODO: Check which backends to use
+            dprint('used win32')
+        dlg_spec = app.AAG_CloudWatcherMASTER #TODO: maybe this is correct?
+        actionable_dlg = dlg_spec.wait('visible')
+        #Get Detailed Window specification:
+        dlg_spec = app.window(title='AAG_CloudWatcher MASTER (v8.01.000)')
+        try:
+            dlg_spec.wrapper_object()
+        except ElementNotFoundError as e:
+            dprint('Title of application probably wrong')
+        # To get possible control sequences print_control_identifiers()
+        dlg_spec.Start.clock() #TODO: check ths starts
+        #Assign window to dictionary for later usage
+        self.apps['AAG'] = dlg_spec
+
+        #       Set up ScopeDome ---> DomeControl
+        try:   #TODO: check if flag: allow_magic_lookup=False should be added due to ambigiosity
+            app = Application(backend="uia").start('C:\ScopeDome\Driver_LS\ASCOM.ScopeDomeUSBDome.exe') #TODO: Check which backends to use
+        except:
+            app = Application(backend="win32").start('C:\ScopeDome\Driver_LS\ASCOM.ScopeDomeUSBDome.exe') #TODO: Check which backends to use
+            dprint('used win32')
+        #TODO: run print_control_identifiers() to determine what button to click
+        dlg_spec = app.whatisthis #TODO: find relevant interaction name
+        actionable_dlg = dlg_spec.wait('visible')
+        #Get Detailed Window specification:
+        dlg_spec = app.window(title=something) #TODO:
+        dlg_spec.OK.click() #This should be the first dialog window
+        #TODO: How do i access the next window? Run in jupyter notebook on some windows device
+        new_window.wait('visible')# TODO: new_window
+        self.apps['ScopeDome'] = new_window
+
+
+        #       Set up 10micron virtual keypad ---> mount control
+        try:   #TODO: check if flag: allow_magic_lookup=False should be added due to ambigiosity
+            app = Application(backend="uia").start('C:\Program Files (x86)\10micron\VirtKP2\virtkeypad.exe') #TODO: Check which backends to use
+        except:
+            app = Application(backend="win32").start('C:\Program Files (x86)\10micron\VirtKP2\virtkeypad.exe') #TODO: Check which backends to use
+            dprint('used win32')
+        #TODO: should be enough unpacking?
+        self.apps['virtkeypad'] = app
+
+        #       Set up MaximDL ---> CCD control
+        try:   #TODO: check if flag: allow_magic_lookup=False should be added due to ambigiosity
+            app = Application(backend="uia").start('C:\Program Files (x86)\Diffraction Limited\MaxIm DL 6\MaxIm_DL') #TODO: Check which backends to use
+        except:
+            app = Application(backend="win32").start('C:\Program Files (x86)\Diffraction Limited\MaxIm DL 6\MaxIm_DL') #TODO: Check which backends to use
+            dprint('used win32')
+        #TODO: Do unpacking, currently license issues
+
+        #       Set up ACP Planer ---> Scheduler
+        try:   #TODO: check if flag: allow_magic_lookup=False should be added due to ambigiosity
+            app = Application(backend="uia").start('C:\Program Files (x86)\Diffraction Limited\MaxIm DL 6\MaxIm_DL') #TODO: Check which backends to use
+        except: #TODO: Fix location, cant get past shortcut for some reason
+            app = Application(backend="win32").start('C:\Program Files (x86)\Diffraction Limited\MaxIm DL 6\MaxIm_DL') #TODO: Check which backends to use
+            dprint('used win32')
+
+    def check_processes(self):
+        """Monitor weather data and scheduler
+        IMPORTANT: This should be running in parallel to CCD control and new scheduler so write independently
+        """ #TODO: change bios to auto boot, get some random pc for wake on lan?
+        raise Exception('Not Implemented yet')
