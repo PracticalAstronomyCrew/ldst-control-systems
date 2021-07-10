@@ -9,164 +9,12 @@ import requests
 import time
 import datetime as dt
 import ephem
+import matplotlib.pyplot as plt
+import numpy as np
 
-#Function imports from the same directory
-from Helper_funcs import dprint, sqlite_retrieve_table
+from Helper_funcs import sqlite_retrieve_table, dprint
 
-class Scheduler:
-    """
-    Overarching class taking care of Scheduling
-    - Image calibration and other controls will be contained to seperate Classes
-    This class is only required for execution and all other classes will not be
-
-    https://observatorycontrolsystem.github.io/
-    """
-    def __init__(self, Controller):
-        """
-        AsCOM or INDI python bindings for controling the observatory
-        https://www.indilib.org/develop/indi-python-bindings.html
-        ASCOM ALPACA for communication
-        """
-        #List which will contain all observations
-        self.schedule = []
-        self.Dome = Controller.Dome
-        self.Telescope = Controller.Telescope
-        self.con = Controller.con
-        self.obs = EarthLocation(53.3845258962902, 6.23475766593151) 
-        self.cur = self.con.cursor()
-        dprint('Retrieving Scheduling data')
-        self.objects = sqlite_retrieve_table(self.cur, 'Schedule')
-        for i in range(len(self.objects)):
-            self.determine_priority(self.objects[i])
-        order = self.do_tonight()
-        dprint('Created observing Schedule in order: {}'.format(order))
-
-
-    def determine_priority(self, obj):
-        """
-        Function that positions an Observing request 
-        obj must contain: time sensitive	Observer type 	Rarity	total length (min)	Submission date
-        """
-        #Base variable onto which is added
-        priority = 0
-        #Checking if time sensitive
-        if obj['time_sensitive'] == 'Yes':
-            priority += 10
-        #Checking who created the querry
-        observer_dict =  {'Moderator':100, 'OA':1, 'Staff':0.5,'Student (Thesis)':0.4,'Student': 0.3,'Outreach/schools':0.2,'Public':0.1}
-        for key in observer_dict:
-            if obj['Observer_type'] == key:
-                priority += 5*observer_dict[key]
-        #Checking for rarity of observation
-        if 0 < obj['Rarity'] <= 10:
-            priority += 3*1
-        if obj['Rarity'] > 10:
-            priority += 3*0.1
-        #Checking for length of observation
-        if obj['total_length'] <= 30:
-            priority += 2*1
-        if 30 < obj['total_length'] <= 60:
-            priority += 2*0.9
-        if 60 < obj['total_length'] <= 120:
-            priority += 2*0.85
-        if 120<obj['total_length'] <= 360:
-            priority += 2*0.8
-        if 360<obj['total_length'] <= 1000:
-            priority += 2*0.7
-        if 1000<obj['total_length']:
-            priority += 2*0.1
-        #Checking for submission date
-        if 0<=obj['submission_date'] <= 1:
-            priority += 1*0.2
-        if 1<obj['submission_date'] <= 2:
-            priority += 1*0.3
-        if 2<obj['submission_date'] <= 5:
-            priority += 1*0.4       
-        if 5<obj['submission_date'] <= 10:
-            priority += 1*0.5
-        if 10<obj['submission_date'] <= 100:
-            priority += 1*1
-        obj['priority'] = float(priority)
-        #Iterating for position
-        for index in range(len(self.schedule)):
-            if type(self.schedule[index]['priority']) == float: #Check for manually changed order, not to be touched
-                if self.schedule[index]['priority'] < obj['priority']:
-                    break
-        #Adding the request to list moving the element with a lower priority one order down
-        self.schedule.insert(index, obj) #TODO: Maybe change to dictionary object with key being priority and obj being value
-
-    def do_tonight(self):
-        """
-        Function determining which observations will occure to maximize observing time per night
-        """
-        observing_time = Time('2010-12-21 1:00')
-        #base coordinate system
-        altaz = AltAz(location=obs, obstime=observing_time)
-        location = EarthLocation(53.3845258962902, 6.23475766593151) #Lon Lat of observatory (currently guessed)
-
-
-
-
-        m1 = SkyCoord.from_name('M1')
-        m1.transform_to(altaz)
-        return 0
-
-    def do_next(self):
-        """
-        Modified do_tonight, in case telescope has to close midway through observation or the weather is inconsistent
-        """
-        return 0
-        
-
-
-
-    def start_observing(self):
-        """
-        Checks weather conditions, time and sun's position. 
-        Slews telescope
-        If all checks are passed opens dome
-        and starts observing
-        """
-        #sched.scheduler(time.monotonic(),) #TODO: Check if this could be useful
-        #Check that telescope is allowed to observe
-
-        for i in range(number_of_exposures):
-            while self.Dome.open: 
-                #TODO: Start imaging
-                return 0
-            while not self.Dome.open:
-                time.sleep(60)
-                #TODO: Add condition in case object is not visible anymore
-                return 0
-
-                
-
-
-        
-
-
-
-    def write_metadat(self):
-        """
-        Write observations metadata to fits file #TODO: Check if this is required
-        """
-        return 0
-
-
-
-
-    def background_tasks(self):
-        """
-        Uses seperate script in background (preferably by doing computation while data is being collected) run as second
-        process to compute Bias, Dark, and flat
-        """
-        return 0
-
-
-
-from Helper_funcs import sqlite_retrieve_table
-
-def assign_priority(obj, today):
+def assign_priority(obj):
     """
     Packaging function for daily_Schedule
     ----------
@@ -195,7 +43,7 @@ def assign_priority(obj, today):
 
         #Checking for number of dates since submission date
     start = dt.datetime.strptime(obj['Submission_Date'], "%d-%m-%Y")
-    days_since_sub = (today-start).days
+    days_since_sub = (dt.datetime.now()-start).days
     #Determining priority additive for days left
     boundary = [0,0,1,2,5,10,100]
     priority_adder = [0.2,0.2,0.3,0.4,0.5,1]
@@ -203,7 +51,7 @@ def assign_priority(obj, today):
 
         #Checking number of days until finish date
     end = dt.datetime.strptime(obj['Completed_by'], "%d-%m-%Y")
-    days_to_fin = (end-today).days
+    days_to_fin = (end-dt.datetime.now()).days
     #Determining priority additive for days left
     boundary = [0,0,1,2,5,10,100]
     priority_adder = [100,100,70,30,20,1]
@@ -249,16 +97,31 @@ def night_schedule(obj):
     location = EarthLocation(53.3845258962902, 6.23475766593151) #Lon Lat of observatory (currently guessed)
     t = Time([(weather_data['Sunset']+i*dt.timedelta(seconds=600)).strftime('%Y-%m-%dT%H:%M:%S') for i in range(24) if ((weather_data['Sunset']+i*dt.timedelta(seconds=600))<weather_data['Sunrise'])])
     altaz = coord.AltAz(location=location, obstime=t)
-     
-    #Sunrise + weather data https://medium.com/nexttech/how-to-use-the-openweathermap-api-with-python-c84cc7075cfc
-
+    #Below filtering is done for wheter or not observation is actually possible and within which timeframe
     for i in range(len(obj)):
-        obj[i] = check_min_conditions(obj[i],weather_data) #TODO: Check which function executes quicker and sort accordingly
+        obj[i] = check_min_conditions(obj[i],weather_data)
         if obj[i]['Possible']:
-            obj[i] = check_visible(obj[i],altaz,location)
+            obj[i] = check_visible(obj[i],altaz)
         else:
             pass
-    return obj
+    #Assigning an observational schedule
+    schedule = {(weather_data['Sunset']+dt.timedelta(seconds=600*i)):0 for i in range(84) if (weather_data['Sunset']+dt.timedelta(seconds=600*i)<weather_data['Sunrise'])}
+    for i in obj: #i is dict object for each observation
+        if i['Possible']: #Previous functions will have established this
+            count = 0 #TODO: Check that we can split observations!!!
+            obs_length = i['total_length']/10
+            if int(obs_length) != float(obs_length): obs_length = int(obs_length)+1 #TODO: For now 10 minute indeces, see if and how to split it
+            for key in schedule: #Keys are datetime objects 10 minutes seperated from each other
+                if i['Obs_time'][0].to_datetime()<=key and schedule[key]==0 and key < i['Obs_time'][1].to_datetime() and count != obs_length: #Check start time onward, that nothing is assigned yet, and that entry is less than end time, and that the needed timeslots haven't all been assigned yet
+                    schedule[key] = i['obs_id'] #Assign obs_id
+                    count += 1
+                elif key == i['Obs_time'][1].to_datetime() and schedule[key]==0: #Check end time, and that nothing is assigned yet
+                    schedule[key] = i['obs_id']
+                    count+=1
+                    break
+                elif count == obs_length:
+                    break
+    return obj, schedule
 
 def check_visible(obj,altaz):
     """
@@ -363,11 +226,57 @@ def daily_Schedule(database, table):
     """
     connect = sqlite3.connect(database)
     content = sqlite_retrieve_table(connect, table)
-    today = dt.datetime.now()
+    count = 1
     for i in content: 
-        i = assign_priority(i, today) #Pass date to compute days since and days to 
+        i = assign_priority(i) 
+        i['obs_id'] = count #assign obs_id for scheduling 
+        count+=1
     content = sorted(content, key=lambda k: k['priority'], reverse=True)
     return content
 
 
 
+def make_plot(objects, schedule,weather):
+    """Makes standardized graphs of objects planned for observation and the weather conditions"""
+    keys = {'Temperature', 'Pressure', 'Humidity', 'Dew_Point', 'Cloud_cover', 'Visibility', 'Wind_Speed', 'Wind_direction', 'Rain_Prob', 'Time', 'Moon', 'Sunset', 'Sunrise'}
+    fig = plt.figure(figsize=(12,12))
+    fig,ax = plt.subplots(nrows=2,ncols=2,figsize=(24,12))
+    ax[0,0].plot(weather['Time'],np.array(weather['Temperature'])-273.15,label='Temperature C')
+    ax[0,0].plot(weather['Time'],np.array(weather['Dew_Point'])-273.15,label='Dew Point C')
+    ax[0,1].plot(weather['Time'],np.array(weather['Pressure']),label='Pressure kPa')
+    ax[0,1].plot(weather['Time'],np.array(weather['Visibility'])/10,label='Visibility 10*m')
+    ax[1,0].plot(weather['Time'],np.array(weather['Humidity']),label='Humidity %')
+    ax[1,0].plot(weather['Time'],np.array(weather['Cloud_cover']),label='Cloud Cover %')
+    ax[1,0].plot(weather['Time'],np.array(weather['Rain_Prob']),label='Rain Probability %')
+    ax[1,1].plot(weather['Time'],np.array(weather['Wind_Speed']),label='Wind Speed m/s')
+    observing = False
+    for key in schedule:
+        if schedule[key]!=0 and not observing:
+            name = [i['object'] for i in objects if i['obs_id']==schedule[key]]
+            ax[0,0].axvline(key, c='g',label=name[0]+', obs_id='+str(schedule[key]))
+            ax[1,0].axvline(key, c='g',label=name[0]+', obs_id='+str(schedule[key]))
+            ax[0,1].axvline(key, c='g',label=name[0]+', obs_id='+str(schedule[key]))
+            ax[1,1].axvline(key, c='g',label=name[0]+', obs_id='+str(schedule[key]))
+            observing = True
+            obs_id = str(schedule[key])
+        elif int(schedule[key])!=int(obs_id) and observing:
+            observing = False
+            ax[0,0].axvline(key, c='r',label='end '+name[0]+', obs_id='+obs_id)
+            ax[1,0].axvline(key, c='r',label='end '+name[0]+', obs_id='+obs_id)
+            ax[0,1].axvline(key, c='r',label='end '+name[0]+', obs_id='+obs_id)
+            ax[1,1].axvline(key, c='r',label='end '+name[0]+', obs_id='+obs_id)
+            if schedule[key]!=0: #In case new observation is started here
+                name = [i['object'] for i in objects if i['obs_id']==schedule[key]]
+                ax[0,0].axvline(key+dt.timedelta(seconds=60), c='g',label=name[0]+', obs_id='+str(schedule[key]))
+                ax[1,0].axvline(key+dt.timedelta(seconds=60), c='g',label=name[0]+', obs_id='+str(schedule[key]))
+                ax[0,1].axvline(key+dt.timedelta(seconds=60), c='g',label=name[0]+', obs_id='+str(schedule[key]))
+                ax[1,1].axvline(key+dt.timedelta(seconds=60), c='g',label=name[0]+', obs_id='+str(schedule[key]))
+                observing = True
+                obs_id = str(schedule[key])
+
+
+    for j in range(len(ax)):
+        for i in range(len(ax[j])):
+            ax[j][i].set_xlim(weather['Sunset']-dt.timedelta(seconds=5*60),weather['Sunrise']-dt.timedelta(seconds=5*60))
+            ax[j][i].legend()
+    plt.show()
