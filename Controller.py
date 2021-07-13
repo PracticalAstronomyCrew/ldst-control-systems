@@ -23,7 +23,7 @@ class GUI_interaction:
             os.system("TASKKILL /F /IM AAG_CloudWatcher.exe")
             app = Application(backend="uia").start('C:\Program Files (x86)\AAG_CloudWatcher\AAG_CloudWatcher.exe')
             app.AAG_CloudWatcher.START2.click()
-        self.apps['AAG'] = dlg_spec
+        self.apps['AAG'] = app.AAG_CloudWatcher
 
         #       Set up ScopeDome ---> DomeControl #TODO:
         try:   #TODO: check if flag: allow_magic_lookup=False should be added due to ambigiosity
@@ -32,13 +32,7 @@ class GUI_interaction:
             app = Application(backend="win32").start('C:\ScopeDome\Driver_LS\ASCOM.ScopeDomeUSBDome.exe') #TODO: Check which backends to use
             dprint('used win32')
         #TODO: run print_control_identifiers() to determine what button to click
-        dlg_spec = app.whatisthis #TODO: find relevant interaction name
-        actionable_dlg = dlg_spec.wait('visible')
-        #Get Detailed Window specification:
-        dlg_spec = app.window(title=something) #TODO:
-        dlg_spec.OK.click() #This should be the first dialog window
-        #TODO: How do i access the next window? Run in jupyter notebook on some windows device
-        new_window.wait('visible')# TODO: new_window
+        
         self.apps['ScopeDome'] = new_window
 
 
