@@ -6,9 +6,9 @@ from pywinauto.application import Application #High level API to interact with w
 from pywinauto.findwindows import ElementNotFoundError
 from Helper_funcs import dprint
 import os
-
+#Keys needed: ScopeDome; 10micron virtual keypad
 class GUI_interaction:
-    def __init__(self): #TODO: Time init after cpmpletion so that all can be launched prior to sun down
+    def __init__(self): #TODO: Time init after completion so that all can be launched prior to sun down
         """
         Initiates all relevant window and sets them up for usage sequentially, stores window information for later control of telescope and dome
         """
@@ -68,9 +68,5 @@ class GUI_interaction:
         main_win = app['Create Plan for My Observatory']
         self.apps['ACP'] = main_win
 
-    def check_processes(self):
-        """Monitor weather data and scheduler
-        IMPORTANT: This should be running in parallel to CCD control and new scheduler so write independently
-        """ #TODO: change bios to auto boot, get some random pc for wake on lan?
-        raise Exception('Not Implemented yet')
+    
 
