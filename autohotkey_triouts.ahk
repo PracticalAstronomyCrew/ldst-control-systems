@@ -29,7 +29,7 @@ MsgError(exception) { ;https://www.autohotkey.com/docs/commands/OnError.htm
 
 
 
-`:: ; Performs set-up clicking
+`:: ; Performs set-up clicking FIXME: Add AAG!
 
 ;               ACP Planner:
 if WinExist("Create Plan for My Observatory") != "0x0" ;Check that Main Window Exists 
@@ -123,9 +123,39 @@ else  ;In case Application was not started in the beginning
 return
 
 
+-::
+if WinExist("Create Plan for My Observatory") != "0x0" ;Check that Main Window Exists 
+;TODO: Not sure this always works as expected
+    {
+    WinActivate ; FIXME: Add button clicking to load plan
+    Click File
+    Click Import ACP Plan
+    if WinExist("ACP Planner") != "0x0" ; test for message window in case plan has been edited in window
+        {
+            Click Yes
+        }
+    EnterText in searchbar with filepath ; Sort according to age and select newest of results
+    ; Not sure whats next might be the wrong program anyway
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ; https://www.online-tech-tips.com/computer-tips/prevent-shutdown-of-windows/
-
 
 
 =:: ; Restart autohotkey script

@@ -11,8 +11,12 @@ import datetime as dt
 import ephem
 import matplotlib.pyplot as plt
 import numpy as np
+import logging
 
 from Helper_funcs import sqlite_retrieve_table, dprint
+
+logger = logging.getLogger('main.Scheduler')
+logger.debug("starting data logger")
 
 def assign_priority(obj):
     """
@@ -43,7 +47,7 @@ def assign_priority(obj):
 
         #Checking for number of dates since submission date
     start = dt.datetime.strptime(obj['Submission_Date'], "%d-%m-%Y")
-    days_since_sub = (dt.datetime.now()-start).days
+    days_since_sub = abs((dt.datetime.now()-start).days)
     #Determining priority additive for days left
     boundary = [0,0,1,2,5,10,100]
     priority_adder = [0.2,0.2,0.3,0.4,0.5,1]
@@ -51,7 +55,7 @@ def assign_priority(obj):
 
         #Checking number of days until finish date
     end = dt.datetime.strptime(obj['Completed_by'], "%d-%m-%Y")
-    days_to_fin = (end-dt.datetime.now()).days
+    days_to_fin = abs((end-dt.datetime.now()).days)
     #Determining priority additive for days left
     boundary = [0,0,1,2,5,10,100]
     priority_adder = [100,100,70,30,20,1]
@@ -62,7 +66,7 @@ def assign_priority(obj):
     return obj
 
 
-def get_predicted_conditions(): #TODO: Percentual cloud cover, how do we detect where the clouds are/what is observable? NN trained by human supervisor?
+def get_predicted_conditions(short=False): #TODO: Percentual cloud cover, how do we detect where the clouds are/what is observable? NN trained by human supervisor?
     """ #TODO: Get sky brightness
     Retrieves Data from OpenWeatherMap.org using API key #TODO: Get minute wise rain, #TODO: Get hourly moon position? i.e. avoid looking at objects close to the moon?
     """
@@ -70,13 +74,17 @@ def get_predicted_conditions(): #TODO: Percentual cloud cover, how do we detect 
     api_key='52695aff81b7b6e5708ab0e924b859f2'
     url= "http://api.openweathermap.org/data/2.5/onecall?lat={}&lon={}&exclude=[current,minutely,alerts]&appid={}".format(*location, api_key)
     weather = requests.get(url).json()
-    keys = ['Temperature', 'Pressure', 'Humidity', 'Dew_Point', 'Cloud_cover', 'Visibility', 'Wind_Speed','Wind_direction','Rain_Prob']
-    key_return = ['temp','pressure','humidity','dew_point','clouds','visibility','wind_speed','wind_deg','pop']
-    weather_cond = {keys[i]:[weather['hourly'][j][key_return[i]] for j in range(len(weather['hourly']))] for i in range(len(keys))}
-    weather_cond['Time']=[dt.datetime.utcfromtimestamp(i['dt']) for i in weather['hourly']]
-    weather_cond['Moon']=weather['daily'][0]['moon_phase']
-    weather_cond['Sunset']=dt.datetime.utcfromtimestamp(weather['daily'][0]['sunset'])
-    weather_cond['Sunrise']=dt.datetime.utcfromtimestamp(weather['daily'][1]['sunrise'])
+    if not short:
+        keys = ['Temperature', 'Pressure', 'Humidity', 'Dew_Point', 'Cloud_cover', 'Visibility', 'Wind_Speed','Wind_direction','Rain_Prob']
+        key_return = ['temp','pressure','humidity','dew_point','clouds','visibility','wind_speed','wind_deg','pop']
+        weather_cond = {keys[i]:[weather['hourly'][j][key_return[i]] for j in range(len(weather['hourly']))] for i in range(len(keys))}
+        weather_cond['Time']=[dt.datetime.utcfromtimestamp(i['dt']) for i in weather['hourly']]
+        weather_cond['Moon']=weather['daily'][0]['moon_phase']
+        weather_cond['Sunset']=dt.datetime.utcfromtimestamp(weather['daily'][0]['sunset'])
+        weather_cond['Sunrise']=dt.datetime.utcfromtimestamp(weather['daily'][1]['sunrise'])
+    if short:
+        weather_cond = {}
+        weather_cond['Sunset']=dt.datetime.utcfromtimestamp(weather['daily'][1]['sunrise'])
     return weather_cond
 
 
@@ -236,7 +244,7 @@ def daily_Schedule(database, table):
 
 
 
-def make_plot(objects, schedule,weather):
+def make_plot(objects, schedule,weather,print_out=True, save_dir = ''):
     """Makes standardized graphs of objects planned for observation and the weather conditions"""
     keys = {'Temperature', 'Pressure', 'Humidity', 'Dew_Point', 'Cloud_cover', 'Visibility', 'Wind_Speed', 'Wind_direction', 'Rain_Prob', 'Time', 'Moon', 'Sunset', 'Sunrise'}
     fig = plt.figure(figsize=(12,12))
@@ -279,4 +287,80 @@ def make_plot(objects, schedule,weather):
         for i in range(len(ax[j])):
             ax[j][i].set_xlim(weather['Sunset']-dt.timedelta(seconds=5*60),weather['Sunrise']-dt.timedelta(seconds=5*60))
             ax[j][i].legend()
-    plt.show()
+    if print_out:
+        plt.show()
+    else:
+        plt.savefig(os.path.join(save_dir,'{}_pred_plot.png'.format(dt.date.today().strftime('%d_%m_%Y'))))
+
+
+def create_ACP_scheudle(objects, schedule):
+    """
+    Creates ACP text file
+    ---------
+    objects --> dict as returned by night_schedule
+    """
+    #Below segment to determine number of objects to be observed during night
+    obj = {}
+    for key in schedule:
+        if schedule[key] !=0:
+            if schedule[key] in obj:
+                obj[schedule[key]] +=1
+            else:
+                obj[schedule[key]] =1
+    nr_of_observations = len(obj.keys())
+    
+    #Create file header
+    header = ';\n; --------------------------------------------\n; This plan was generated by the automated python script 4.2.6\n; --------------------------------------------\n;\n; For:           jacobus\n; Targets:       {}\n;\n; NOTE:          Timing features are disabled\n;\n;\n; ---------------------------------------------\n;\n'.format(nr_of_observations)
+    #Dusk Flat
+    if dusk_flat: #FIXME define variable + flat plan
+        header += '#duskflats Schedule_flat_{}.txt  ; Acquire flat fields at dusk\n;\n;\n'.format(dt.date.today().strftime('%d_%m_%Y'))
+    else:
+        header += ';\n'
+    # Reference to current obs_id
+    curr = 0
+    for key in schedule: #Key here are date objects seperated by 10 minutes
+        if schedule[key]!=curr and schedule[key]!=0:
+            curr = schedule[key]
+            params = {}
+            for entry in objects: #Iterate through list of observations, should be in correct order
+                if entry['obs_id']==curr: #FIXME: Add the darks flats and bias`s here
+                    for quantifier in ['catalogue_name','count','interval','repeat'] #FIXME: FILTERS!
+                        params[quantifier] = entry[quantifier]
+                    header += entry_layout(params) #Add dark and bias and what not
+                    break
+    #Dawn Flat
+    if dawn_flat: #FIXME define variable + flat plan
+        header += '#dawnflats Schedule_flat_{}.txt  ; Acquire flat fields at dawn\n;\n;\n'.format(dt.date.today().strftime('%d_%m_%Y'))
+    else:
+        header += ';\n'
+
+    header += ';\n; END OF PLAN\n;\n;'
+    #Write schedule to file
+    with open('Schedule_{}.txt'.format(dt.date.today().strftime('%d_%m_%Y')),'w') as file:
+        file.write(header)
+    #TODO Format below correctly
+    flat = '; ---------------------------------------------\n; ACP Auto-Flat Plan - Generated by Python Script\n; ---------------------------------------------\n;\n; For:      jacobus\n; At:       07:50:01\n; From:     Schedule_{}.txt\n; Flats:    16\n;\n; Lines are count,filter,binning (comma-separated)\n; Empty filter uses ACP-configured clear filter\n; ---------------------------------------------------\n;\n4,Luminance,1\n4,Red,1\n4,Green,1\n4,Blue,1\n;\n; ----------------\n; END OF FLAT PLAN\n; ----------------\n;'.format(dt.date.today().strftime('%d_%m_%Y'))
+
+    with open('Schedule_flat_{}.txt'.format(dt.date.today().strftime('%d_%m_%Y')),'w') as file:
+        file.write(flat)
+
+def entry_layout(params, dark=False, bias=False):
+    """Returns string formated for ACP planner plan text file"""
+    if dark: #FIXME: Below incomplete still need to add filters and what not
+        entry='; === Target Dark ({}x{}sec@bin1) ===\n;\n#repeat {}\n#count {}\n#interval {}\n#binning 1\n#dark\n;'.format(params['count'],params['interval'],params['repeat'],params['interval'],params['count'],params['interval'])
+    elif bias:
+        entry='; === Target Bias ({}@bin1) ===\n;\n#repeat {}\n#count {}\n#interval {}\n#binning 1\n#bias\n;'.format(params['count'],params['repeat'],params['count'],params['interval'])
+    else:
+        entry = '; === Target {} ===\n;\n'.format(params['catalogue_name'])
+        if autofocus: #FIXME: define variable
+            entry += '#autofocus    ; AF before target requested\n'
+        #FIXME: Define sourcedir as global!
+        entry += '; WARNING: Folder path is not portable.\n#dir {}    ; Images forced to go into this folder\n'.format(os.path.join("C:/", sourcedir))
+        entry +=  '#repeat {}\n'format(params['repeat'])
+        entry += '#count {}\n'.format(','.join(params['count'])) #TODO: Make sure params count is a list of str numbers, with the same order as filters
+        entry += '#filter {}\n'.format(','.join(params['Filter']))
+        entry += '#interval {}\n'.format(','.join(params['interval'])) #list of exp times #TODO: All ,ust be string!
+        entry += '#binning {}\n'.format(','.format(params['binning']))
+        entry += '{}\n'.format(params['catalogue_name'])
+        entry += '#dir    ; Revert to default images folder\n;\n'
+    return entry
