@@ -53,9 +53,10 @@ else ;In case Application was not started in the beginning
         }
     }
 Connected = 0
-; 10micron Keypad : TODO: AutoConnect Setting in app activated, find a way to recognize if it is actually connected
+; 10micron Keypad
 
-if WinExist("10micron Keypad") != "0x0"{ ;TODO: Find out how to recognize if it is connected
+if WinExist("10micron Keypad") != "0x0"{ 
+    Run, "C:\Users\blaau\OneDrive\Desktop\WakeMeOnLan.exe /wakeup 192.168.0.111"
     }
 else 
     {
@@ -64,6 +65,7 @@ else
     Sleep, 2000 ; Required to be recognized in next statement 
     
     if WinExist("10micron Keypad") {
+        Run, "C:\Users\blaau\OneDrive\Desktop\WakeMeOnLan.exe /wakeup 192.168.0.111"
         }
     else
         {
@@ -72,23 +74,10 @@ else
     }
 
 
-; Maxim DL  
-/*
-TODO: Make it start other applications? Or auto start on boot? Prob latter as there is a difference between started and wanted
-TODO : Check cloud watcher
-Opens several Windows, the main Window has ahk_class
-However in case there is an issue with the weather station, we get a window with the same name but ahk_class #32770
+    ; Maxim DL  
 
-Access in order:
-MountType
- - Wait!
-MaxIm DL Pro 6: Error (if present of course) ahk_class #32770
-Camera Control
-Obser
-
-*/
 if WinExist("MaxIm DL Pro 6") != "0x0" {
-    } ;TODO: Figure out what needs to be done  
+    } 
 else ;In case Application was not started in the beginning
     { 
     LogError("MaxIm DL 6 was not started!")
@@ -106,7 +95,7 @@ else ;In case Application was not started in the beginning
 ; DomeScope
 
 if WinExist(" | ScopeDome Arduino Dome v10 f13") != "0x0" {
-    } ;TODO: Figure out what needs to be done  
+    } 
 else  ;In case Application was not started in the beginning
     { 
     LogError("ScopeDome was not started!")
@@ -117,7 +106,7 @@ else  ;In case Application was not started in the beginning
         }
     else
     {
-    LogError("Couldn't open MaxIm DL Pro 6")
+    LogError("Couldn't open ScopeDome Ardurino Dome")
     }
 
 return
