@@ -3,8 +3,29 @@
 """The purpose of this script is to be a constantly running background manager
 It will be running 24/7 to control execution - Or find something in windows to schedule execution - methods seem flimsy however
 """
-file_path = r''
-remote_path = r''
+file_path = r'' #Already a thing there
+remote_path = r'/net/'
+
+
+filters = 
+
+"""
+Flat plan - dawn dusk
+Bias, Dark - prior to Flat and after second flat
+
+
+Auto Focus - prior to observing once per night
+
+Check pointing direction
+
+
+"""
+
+
+
+
+
+
 
 from Scheduler import night_schedule
 import datetime as dt

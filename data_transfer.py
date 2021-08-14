@@ -13,7 +13,7 @@ import os
 local_dir = r'/path/to/image_dir'
 remote_dir = r'/path/to/rep'
 
-login_params = {'user':'fsemler','password':''} #TODO: User must have default access to directory!
+login_params = {'user':'observer','password':''} #TODO: User must have default access to directory!
 
 def send_results():#TODO: Enable ssh keys
     """Creates ssh connection to kapteyn and sends files from and to above specified filepaths"""

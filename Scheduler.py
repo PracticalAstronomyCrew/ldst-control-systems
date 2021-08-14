@@ -15,6 +15,13 @@ import logging
 
 from Helper_funcs import sqlite_retrieve_table, dprint
 
+
+
+
+
+
+
+
 logger = logging.getLogger('main.Scheduler')
 logger.debug("starting data logger")
 
@@ -54,7 +61,7 @@ def assign_priority(obj):
     priority = range_comp(boundary, priority_adder, days_since_sub, priority)
 
         #Checking number of days until finish date
-    end = dt.datetime.strptime(obj['Completed_by'], "%d-%m-%Y")
+    end = dt.datetime.strptime(obj['t'], "%d-%m-%Y")
     days_to_fin = abs((end-dt.datetime.now()).days)
     #Determining priority additive for days left
     boundary = [0,0,1,2,5,10,100]
@@ -67,7 +74,7 @@ def assign_priority(obj):
 
 
 def get_predicted_conditions(short=False): #TODO: Percentual cloud cover, how do we detect where the clouds are/what is observable? NN trained by human supervisor?
-    """ #TODO: Get sky brightness
+    """ #TODO: Get sky brightness vasheaddonker
     Retrieves Data from OpenWeatherMap.org using API key #TODO: Get minute wise rain, #TODO: Get hourly moon position? i.e. avoid looking at objects close to the moon?
     """
     location = (53.38,6.23)
