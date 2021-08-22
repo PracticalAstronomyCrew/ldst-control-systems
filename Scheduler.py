@@ -119,7 +119,7 @@ class Scheduling:
         """ 
         Retrieves Data from OpenWeatherMap.org using API key 
         """
-        location = (53.38,6.23) #TODO: Get location
+        location = (53.3845258962902, 6.23475766593151)
         api_key='52695aff81b7b6e5708ab0e924b859f2'
         url= "http://api.openweathermap.org/data/2.5/onecall?lat={}&lon={}&exclude=[current,minutely,alerts]&appid={}".format(*location, api_key)
         weather = requests.get(url).json()
@@ -149,7 +149,7 @@ class Scheduling:
         connect = sqlite3.connect(database)
         content = sqlite_retrieve_table(connect, table)
         for i in content: 
-            i = assign_priority(i)  #TODO: Change this script
+            i = assign_priority(i) 
         content = sorted(content, key=lambda k: k['priority'], reverse=True)
         return content
 

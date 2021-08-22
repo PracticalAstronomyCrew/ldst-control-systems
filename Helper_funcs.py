@@ -380,9 +380,13 @@ def create_new_interpolation_dataset(dir, remove = True):
     for key in data:
         temp = data[key]
         temp[-1] = [float(i) for i in temp[-1]]
+        j = None #Something weird happends with the below loop
         for j in range(len(temp[-1])): #
             if temp[-1][j] < 1:
                 break #J will keep the index of the last point
+        if j is None:
+            print('j was not defined in iteration')
+            j = 0
         for k in range(j+500,len(temp[-1])): #Starting point with conservative offset of 500 TODO: Find out how many datapoints are actually taken
             if temp[-1][k] > 1:
                 break
