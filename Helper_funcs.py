@@ -381,18 +381,22 @@ def create_new_interpolation_dataset(dir, remove = True):
         temp = data[key]
         temp[-1] = [float(i) for i in temp[-1]]
         j = None #Something weird happends with the below loop
+        k = None
         for j in range(len(temp[-1])): #
             if temp[-1][j] < 1:
                 break #J will keep the index of the last point
-        if j is None:
+        if j == None:
             print('j was not defined in iteration')
             j = 0
         for k in range(j+500,len(temp[-1])): #Starting point with conservative offset of 500 TODO: Find out how many datapoints are actually taken
             if temp[-1][k] > 1:
                 break
+        if k == None:
+            print('k was not defined in iteration')
+            j = 0
         #We now have our start and stop indices
         #We will now append to a list to save the clipped data
-        clipped = np.array(temp)[::,j:k].tolist()
+        clipped = np.array(temp,dtype=object)[::,j:k].tolist()
         #First create datetime objects
         clipped[0] = [dt.datetime.strptime(x, '%Y-%m-%d %H:%M:%S') for x in clipped[0]]
         csv_data[0] += clipped[0] #Save datetime object as well

@@ -37,7 +37,8 @@ from data_transfer import *
 
 
 logpath = os.path.join(maindatapath, 'log') #TODO: CHange
-file_path = ''
+file_path = 'C:\LDST'
+remote_path = '/net/vega/data/users/observatory/LDST/YYMMDD/'
 
 # Setting up logger
 if not os.access(file_path, os.F_OK): 
@@ -60,60 +61,14 @@ passes = 0
 if __name__ == '__main__':
     while True:
         try:
-            #TODO: Add finished observations to sql and config, synchronize with kapteyn
-            # in the mornings send finished observations
-            # in the evenings retrieve new config file 
+            #TODO: Make backups and retrieve config+database from kapteyn
             
+            #Init of scheduling takes care of the whole process from script start to sun rise
+            Scheduling(os.path.join(file_path)) 
 
-            weather_pred = get_predicted_conditions(short = True) #Only retrieves sunset time
-            logger.info('Sunset time retrieved as {}'.format(weather_pred['Sunset']..strftime('%H:%M:%S')))
-
-            #Start script half to one hour before sunset
-            if weather_pred['Sunset']-dt.timedelta(hours=1)<dt.datetime.now():
-                logger.info('Waiting until 1 hour before sunset')
-                time.sleep(dt.datetime.now()-(weather_pred['Sunset']-dt.timedelta(hours=1)).total_seconds()) #wait until 1 hour before sunset to set up
-            #Copy config from kapteyn
-            logger.info('Retrieving config and sql database')
-            get_config()
-
-            logger.info('Starting Scheduling')
-            weather_pred = get_predicted_conditions(short = False)
-
-            #Starts AutoHotkey Script opening all applications
-            keyboard = Controller()
-            keyboard.press('`') 
-            logger.info('Triggered AHK script')
-
-            objects = daily_Schedule(os.path.join(file_path,'Database.db'), 'Schedule')
-            logger.info('Loaded database')
-
-            #Create the schedule for the night
-            objects, schedule = night_schedule(objects)
-            logger.info('Created preliminary schedule')
-
-            #Make plot of weather with obs times and save to plot folder
-            if os.path.isdir(os.path.join(file_path,'plots')):
-                make_plot(objects, schedule,weather_pred, pred_out = False, dir=os.path.join(file_path,'plots'))
-            else:
-                os.mkdir(os.path.join(file_path,'plots'))
-                make_plot(objects, schedule,weather_pred, pred_out = False, dir=os.path.join(file_path,'plots'))
-            logger.info('Saved Plot of observing schedule, with predicted conditions')
-            
-            #Creates file - #FIXME: Add relevant parameters to params
-            create_ACP_scheudle(objects, schedule)
-            logger.info('Created schedule for ACP')
-            keyboard.press('-') #Start ahk script that loads config and starts observation
-            logger.info('Triggered AHK script to load ACP schedule')
-
-            if weather_pred['Sunrise']<dt.datetime.now():
-                logger.info('Waiting until sunrise')
-                (time.sleep(dt.datetime.now()-weather_pred['Sunrise'])).total_seconds()
-            
-            #Update config file and sql database
-            update_config()
             #Send observing results to kapteyn
             send_results(file_path,remote_path)
-            #TODO:Make sure to make back ups
+            
             
 
 
