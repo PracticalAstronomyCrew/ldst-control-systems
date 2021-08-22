@@ -215,7 +215,11 @@ def sqlite_get_columns(connect, table):
             return '('+i[-1].split('(')[-1]
 
 
-
+def sqlite_remove_row(connect, table, Identifier_string, Identifier_value):
+    """table ---> table to be modified
+    Identifier_string --> the header from which the row can be recognized 
+    Identifier_value --> The value of the header which identifies the row"""
+    connect.execute("DELETE from {} where {}={}".format(tabel, Identifier_string, Identifier_value))
 
 def sqlite_get_tables(conn):
     """

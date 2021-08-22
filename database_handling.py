@@ -198,7 +198,7 @@ def create_sql_database():
     Completed will contain each individual completed PID entry
     -------------
     Schedule .headers:
-    object, PID, Filter, exposure, binning, airmass, moon, seeing, sky_brightness, Observer_type, time_sensitive, Submission_Date, Completed_by, total_length
+    obsID, object, PID, Filter, exposure, binning, airmass, moon, seeing, sky_brightness, Observer_type, time_sensitive, Submission_Date, Completed_by, total_length, rarity, exposures
     -----------
     Observations .headers:
     PID, Name, E-Mail, Phone, Completed_by, Submission_Date, Observer_type, time_sensitive, obsIDs, missing_obsIDs, total_length, logsheet, Obs_days
@@ -359,7 +359,7 @@ def add_to_approval_file(file_path):
             file_path = input('The file can not be found, please enter the full file path\n')
         else:
             break
-    if os.path.isfile(os.path.join(approval_folder, 'config')):
+    if os.path.isfile(os.path.join(approval_folder, 'config')): #TODO: CHange to local path
         create_config()
     f= open(os.path.join(approval_folder, 'config'),'r')
     config= json.load(f)
@@ -374,12 +374,12 @@ def add_to_approval_file(file_path):
     print('You will soon be contacted about your observation')
     config['PID'] += 1
 
-    update_config()
+    update_config(config)
 
 
-def update_config(content):
+def update_config(local_dir,content):
     """Updates config file with new parameters"""
-    with open(os.path.join(approval_folder, 'config'), 'w') as file:
+    with open(os.path.join(local_dir, 'config'), 'w') as file:
         json.dump(content, file)
 
 

@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 from pynput.keyboard import Controller
 
 from Helper_funcs import sqlite_retrieve_table, dprint, create_new_interpolation_dataset
+from data_transfer import update_config_after_run
 
 #Boilerplate logging
 logger = logging.getLogger('main.scheduler')
@@ -60,7 +61,7 @@ class Scheduling:
         """Starts pipeline scheduling execution"""
 
         self.get_predicted_conditions(short=True)
-
+        '''
         if os.path.isfile(os.path.join(file_path, 'sky_bright', 'Interpolation_Data.csv')):
             logger.info('Interpolation data present')
         else: #TODO: Create backup of file in case someone deletes it as a fall back and time how long it takes on the win machine
@@ -68,7 +69,8 @@ class Scheduling:
             create_new_interpolation_dataset('./sky_bright')
             logger.warning('Interpolation data retrieved')
             
-
+        
+        '''
         logger.info('Predicted sunset at {}, script will continue at {}'.format(self.sunset, self.sunset-dt.timedelta(hours=1)))
         '''#FIXME: Remove quotes
         if self.sunset > dt.datetime.now():
@@ -109,7 +111,7 @@ class Scheduling:
             logger.info('Waiting until sunrise')
             (time.sleep(dt.datetime.now()-weather_pred['Sunrise'])).total_seconds()
         
-        update_config()
+        update_config_after_run(self.file_path)
         #Send observing results to kapteyn
         send_results(file_path,remote_path)'''
 
@@ -168,7 +170,7 @@ class Scheduling:
             if image['seeing']!=None:
                 pass #TODO: Create custom constraint
             if image['sky_brightness']!=None:
-                constants.append(SkyBrightnessConstraint(weather=self.weather_cond,min=image['sky_brightness']))
+                constraints.append(SkyBrightnessConstraint(weather=self.weather_cond,min=image['sky_brightness']))
 
             b = ObservingBlock.from_exposures(target=FixedTarget.from_name(image['object']), priority=priority, time_per_exposure=image['exposure']*u.second,number_exposures=image['number_of_exposures'], readout_time=self.read_out_time,configuration=config,constraints=constraints)
             blocks.append(b)
@@ -177,20 +179,44 @@ class Scheduling:
 
         scheduler = PriorityScheduler(constraints = self.global_constraints, observer=self.observer, transitioner=transitioner)
 
-        priority_schedule = Schedule(Time(self.weather_cond['Sunset']),Time(self.weather_cond['Sunrise']))
+        self.priority_schedule = Schedule(Time(self.weather_cond['Sunset']),Time(self.weather_cond['Sunrise']))
 
-        schedule = scheduler(blocks, priority_schedule)
+        self.schedule = scheduler(blocks, self.priority_schedule)
+
+        #Append extra observations without conditions to free spots of scheduler
+        self.create_extra_obs()
 
         if save_plot:
             plt.figure(figsize = (14,6))
-            plot_schedule_airmass(priority_schedule)
+            plot_schedule_airmass(self.priority_schedule)
             plt.legend(loc = "upper right")
             if not os.path.isdir(os.path.join(self.file_path, 'plots')):
                 os.mkdir(os.path.join(self.file_path, 'plots'))
             plt.savefig(os.path.join(self.file_path, 'plots', dt.date.today().strftime('%Y%m%d')+'.png'))
             
         
-        return schedule.scheduled_blocks #TODO: Fill empty spots
+        return self.schedule.scheduled_blocks
+
+    def create_extra_obs(self):
+        free_time = 0
+        for i in self.schedule.open_slots:
+            time = i.duration.to_value(u.second)
+            if time > 600: #If more than 10 minutes free try to schedule something with no min conditions
+                free_time+=time
+        #TODO: Retrieve x slots to fill the time frame, constraints are set in ObservingBlock
+        if not free_time > 0:
+            return 0
+        blocks = []
+        priority = 100 #start at low priority so nothing else gets overriden
+        for i in to_append:#TODO: All below
+            config = {'filter':image['Filter'], 'tempID':image['obsID']} 
+            b = ObservingBlock.from_exposures(target=FixedTarget.from_name(image['object']), priority=priority, time_per_exposure=image['exposure']*u.second,number_exposures=image['number_of_exposures'], readout_time=self.read_out_time,configuration=config)
+            blocks.append(b)
+            priority+=1
+        
+        self.schedule(blocks, self.priority_schedule)
+        
+
 
     def create_ACP_scheudle(self):
         """
@@ -236,7 +262,7 @@ class Scheduling:
                             logger.warning('ObsID {} Image directory for todays run already existed!'.format(params['ObsID']))
                         header+=self.entry_layout(params,ObsID_path)
                         break #Break j loop
-            elif 'THeOtherIDThing' in i.configuration:
+            elif 'tempID' in i.configuration:
                 pass #FIXME: Add other observations
             else:
                 logger.warning('Could not append observation {}'.format(i.configuration))
