@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """
 Custom functions for output and logging
 """
