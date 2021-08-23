@@ -39,8 +39,6 @@ def create_sql_database():
     PID, Name, E-Mail, Phone, Completed_by, Submission_Date, Observer_type, time_sensitive, obsIDs, total_length, logsheet, Obs_days
     """
     databasepath = os.path.join(file_path, 'config', 'Database.db')
-    f = open(databasepath, 'x')
-    f.close()
     
     connect = sqlite3.connect(databasepath)
 
