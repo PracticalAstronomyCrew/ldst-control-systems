@@ -1,4 +1,5 @@
-#!/bin/python3
+#!python
+#!C:\Users\blaau\AppData\Local\Programs\Python\Python39
 
 """The purpose of this script is to be a constantly running background manager
 It will be running 24/7 to control execution - Or find something in windows to schedule execution - methods seem flimsy however
@@ -33,7 +34,7 @@ from Scheduler import *
 from data_transfer import *
 
 
-file_path = 'C:\LDST'
+file_path = os.path.abspath('C:\LDST')
 remote_path = '/net/vega/data/users/observatory/LDST/'
 
 file_path = '.' ##TODO: CHange

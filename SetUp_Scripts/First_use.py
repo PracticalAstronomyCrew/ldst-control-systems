@@ -3,10 +3,12 @@ import sys
 import os
 import time
 import json
+import sqlite3
+from astropy.utils import data
 
 import numpy as np
 
-file_path = r'C:/LDST/'
+file_path = os.path.abspath(r'C:/LDST/')
 
 
 """Below First usage set up"""
@@ -35,8 +37,8 @@ def create_sql_database():
     PID, Name, E-Mail, Phone, Completed_by, Submission_Date, Observer_type, time_sensitive, obsIDs, total_length, logsheet, Obs_days
     """
     databasepath = os.path.join(file_path, 'config', 'Database.db')
-    if os.path.isfile(databasepath):
-        raise Exception('Database already exists')
+    f = open(databasepath, 'x')
+    f.close()
     
     connect = sqlite3.connect(databasepath)
 
@@ -71,15 +73,15 @@ def create_config():
         json.dump(content, file)
 
 
-def create_folders(local_dir):
+def create_folders():
     """Function to create structure of directory"""
-    check_and_create(local_dir, 'logs')
-    check_and_create(local_dir, 'logsheets')
-    check_and_create(local_dir, 'backups')
-    check_and_create(local_dir, 'backups', 'configs')
-    check_and_create(local_dir, 'backups', 'Databases')
-    check_and_create(local_dir, 'config')
-    check_and_create(local_dir, 'sky_bright')
+    check_and_create(file_path, 'logs')
+    check_and_create(file_path, 'logsheets')
+    check_and_create(file_path, 'backups')
+    check_and_create(file_path, 'backups', 'configs')
+    check_and_create(file_path, 'backups', 'Databases')
+    check_and_create(file_path, 'config')
+    check_and_create(file_path, 'sky_bright')
 
 
 def check_and_create(*args):
@@ -92,8 +94,8 @@ def check_and_create(*args):
 if __name__=='__main__':
     print('This will initiate a new set of configs, the script will wait 1 minute prior to writing files')
     time.sleep(60)
-    create_sql_database()
-    create_config()
     create_folders()
+    create_config()
+    create_sql_database()
     print('Created directory structure, a new config, and an empty sql database')
 
