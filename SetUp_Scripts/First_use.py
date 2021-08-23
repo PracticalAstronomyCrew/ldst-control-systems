@@ -1,3 +1,5 @@
+#!python
+#!C:\Users\blaau\AppData\Local\Programs\Python\Python39
 
 import sys
 import os
