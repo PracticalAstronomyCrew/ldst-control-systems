@@ -29,9 +29,9 @@ MsgError(exception) { ;https://www.autohotkey.com/docs/commands/OnError.htm
 
 
 
-`:: ; Performs set-up clicking FIXME: Add AAG!
+`:: ; Performs set-up clicking FIXME: Add AAG! Or does it auto open
 
-;               ACP Planner:
+;               ACP Planner: Change the program
 if WinExist("Create Plan for My Observatory") != "0x0" ;Check that Main Window Exists 
 ;TODO: Not sure this always works as expected
     {
@@ -113,19 +113,21 @@ return
 
 
 -::
-if WinExist("Create Plan for My Observatory") != "0x0" ;Check that Main Window Exists 
+if WinExist("ACP Observatory Control Software") != "0x0" ;Check that Main Window Exists 
 ;TODO: Not sure this always works as expected
     {
-    WinActivate ; FIXME: Add button clicking to load plan
-    Click File
-    Click Import ACP Plan
-    if WinExist("ACP Planner") != "0x0" ; test for message window in case plan has been edited in window
+    WinActivate ; FIXME: CHeck the button names with the window spy
+    ControlClick, Telescope
+    ControlClick, Connect
+    ControlClick, Camera
+    ControlClick, Connect
+    ControlClick, Select the Script
+    ;AM i going to have to load a js script?
+
+    if WinExist("ACP Planner") != "0x0" ; test for message window in case plan has been edited in window Shouldnt happeb
         {
             Click Yes
         }
-    EnterText in searchbar with filepath ; Sort according to age and select newest of results
-    ; Not sure whats next might be the wrong program anyway
-
     }
 
 

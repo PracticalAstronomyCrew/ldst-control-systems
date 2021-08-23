@@ -16,7 +16,7 @@ from astroplan.plots import plot_schedule_airmass
 import sqlite3
 import requests
 import datetime as dt
-import ephem
+import csv
 import os
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 from pynput.keyboard import Controller
 
 from Helper_funcs import sqlite_retrieve_table, dprint, create_new_interpolation_dataset
-from data_transfer import update_config_after_run
+from data_transfer import update_config_after_run, get_config
 
 #Boilerplate logging
 logger = logging.getLogger('main.scheduler')
@@ -58,22 +58,30 @@ class Scheduling:
     global_constraints = [twilight, altitude]
 
 
-    def __init__(self, file_path, config):
+    def __init__(self, file_path, remote_dir):
         """Starts pipeline scheduling execution"""
+        #Retrieve modified config and database
+        get_config(file_path,remote_dir)
 
         self.get_predicted_conditions(short=True)
-        '''
+        
         if os.path.isfile(os.path.join(file_path, 'sky_bright', 'Interpolation_Data.csv')):
             logger.info('Interpolation data present')
         else: #TODO: Create backup of file in case someone deletes it as a fall back and time how long it takes on the win machine
-            logger.warning('No interpolation data present, retrieving now')
-            create_new_interpolation_dataset('./sky_bright')
+            logger.warning('No interpolation data present')
+            if os.path.isfile(os.path.join(file_path, 'backups', 'Interpolation_Data.csv')):
+                logger.info('Found Interpolation Data backup, copying to sky_bright')
+                file_cont = open(os.path.join(file_path, 'backups', 'Interpolation_Data.csv')).readlines()
+                writer = csv.writer(open(os.path.join(file_path,'sky_bright', 'Interpolation_Data.csv'), 'w'))
+                for row in file_cont:
+                    writer.writerow(row)
+            else:
+                logger.warning('No backup found either, check what happened! Creating new set')
+                create_new_interpolation_dataset('./sky_bright')
             logger.warning('Interpolation data retrieved')
-            
         
-        '''
         logger.info('Predicted sunset at {}, script will continue at {}'.format(self.sunset, self.sunset-dt.timedelta(hours=1)))
-        '''#FIXME: Remove quotes
+        
         if self.sunset > dt.datetime.now():
             time_to_sleep = ((self.sunset-dt.timedelta(hours=1))-dt.datetime.now()).total_seconds()
             if time_to_sleep <= 0:
@@ -82,7 +90,7 @@ class Scheduling:
                 time.sleep(time_to_sleep) #Sleeps until an hour to sunset
         else:
             logger.warning('The script reached execution after Sunset! Late start of Observation')
-        '''
+        
         logger.info('Starting applications using AutoHotkeyScript')
         self.file_path = file_path
 
@@ -96,25 +104,25 @@ class Scheduling:
 
         logger.info('Creating priority ordered list')
 
-        self.priority_ordered_list = self.daily_Schedule(os.path.join(file_path, 'Database.db'), 'Schedule') #Change this to reduce computation by using grouped PID and so on for priority assignment
+        self.priority_ordered_list = self.daily_Schedule(os.path.join(file_path, 'Database.db'), 'Schedule')
         
         self.scheduled_blocks = self.create_priority_schedule() 
 
         logger.info('Created Schedule')
         #FIXME: Above doesnt fill all the timeframes only the given ones, check total free time and add other obs
         logger.info('Creating ACP scheduler text file')
-        
+        #The below creates the ACP text file, and assigns directories to each obsID (all of which also get created)
         self.create_ACP_scheudle()
 
         logger.info('Created ACP schedule')
-        keyboard.press('-')
+        keyboard.press('-') #TODO:
         logger.info('Loaded schedule into ACP')
         
-        if weather_pred['Sunrise']<dt.datetime.now():
+        if self.weather_cond['Sunrise']<dt.datetime.now():
             logger.info('Waiting until sunrise')
-            time.sleep((dt.datetime.now()-weather_pred['Sunrise']).total_seconds())
+            time.sleep((dt.datetime.now()-self.weather_cond['Sunrise']).total_seconds())
         else:
-            logger.warning('Script finished execution after sundown')
+            logger.warning('Script finished execution after sunrise!!')
         
         update_config_after_run(self.file_path)
         
@@ -181,11 +189,11 @@ class Scheduling:
 
         transitioner = Transitioner(self.slew_rate,self.ftr)
 
-        scheduler = PriorityScheduler(constraints = self.global_constraints, observer=self.observer, transitioner=transitioner)
+        self.scheduler = PriorityScheduler(constraints = self.global_constraints, observer=self.observer, transitioner=transitioner)
 
         self.priority_schedule = Schedule(Time(self.weather_cond['Sunset']),Time(self.weather_cond['Sunrise']))
 
-        self.schedule = scheduler(blocks, self.priority_schedule)
+        self.schedule = self.scheduler(blocks, self.priority_schedule)
 
         #Append extra observations without conditions to free spots of scheduler
         self.create_extra_obs()
@@ -208,6 +216,8 @@ class Scheduling:
             if time > 600: #If more than 10 minutes free try to schedule something with no min conditions
                 free_time+=time
         #TODO: Retrieve x slots to fill the time frame, constraints are set in ObservingBlock
+        to_append = []
+
         if not free_time > 0:
             return 0
         blocks = []
@@ -217,8 +227,8 @@ class Scheduling:
             b = ObservingBlock.from_exposures(target=FixedTarget.from_name(image['object']), priority=priority, time_per_exposure=image['exposure']*u.second,number_exposures=image['number_of_exposures'], readout_time=self.read_out_time,configuration=config)
             blocks.append(b)
             priority+=1
-        
-        self.schedule(blocks, self.priority_schedule)
+        if len(blocks)>0: #Throws an error if passed an empty list
+            self.scheduler(blocks, self.priority_schedule)
         
 
 

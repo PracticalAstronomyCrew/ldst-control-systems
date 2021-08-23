@@ -7,21 +7,29 @@ Using SFTP protocoll to transfer files using ssh, with the python client fabric
 import os
 from threading import local
 import logger
-from fabric import Connection
+from fabric import Connection, config
 import datetime as dt
+import logging
+import json
+import sqlite3
 
 from Helper_funcs import sqlite_get_tables,sqlite_retrieve_table
-from database_handling import update_config
 #The below contain several folders, one for each observation, and maybe some more subfolders for each filter or config file
 login_params = {'user':'observer','password':''} #TODO: User must have default access to directory!
 
 logger = logging.getLogger('main.data')
 logger.debug("starting data logger")
 
+def update_config(local_dir,content):
+    """Updates config file with new parameters"""
+    with open(os.path.join(local_dir, 'config','config'), 'w') as file:
+        json.dump(content, file)
+
 def send_results(local_dir,remote_dir):#TODO: Enable ssh keys
     """Creates ssh connection to kapteyn and sends files from and to above specified filepaths"""
     c = Connection(host='kapteyn.astro.rug.nl', user=login_params['user'],password=login_params['password'])
     send_dir(local_dir,remote_dir,c)
+    send_config(local_dir,remote_dir,c)
 
 
 def send_dir(local_dir,remote_dir, connection):
@@ -29,6 +37,8 @@ def send_dir(local_dir,remote_dir, connection):
     Sends contents of directory local_dir to remote_dir on station,
     First creates directories
     then sends files
+
+    It skips all existing files as they would otherwise be overwritten so things like config and Database need to be passed seperately
     """
     #TODO: Overwrite existing files? Remove from local device after sending? Skip if top directory exists or iterate through all?
     os.chdir(local_dir) #Moves current operating directory
@@ -64,6 +74,14 @@ def send_dir(local_dir,remote_dir, connection):
                 pass
     logger.info('Moved {} files, in the process {} directories were created'.format(files_written, directories_created))
 
+def send_config(local_dir,remote_dir, connection):
+    """Sends content of config directory"""
+    config_dir = os.path.join(local_dir, 'config')
+    for root, dirs, files in os.walk(config_dir, topdown = False):
+        for name in files:
+            connection.put(local=os.path.join(root, name),remote=os.path.join(remote_dir,'config', name))
+    logger.info('Moved configs and Database to kapteyn')
+
 
 def get_config(local_dir,remote_dir):
     """Retrieve config from kapteyn, run prior to scheduling"""
@@ -84,13 +102,15 @@ def update_config_after_run(local_dir):
     """Updates config with results of past night, 
     Updates Database 
     run prior to sending data to kapteyn (this will be part of data)"""
-    #TODO: Make sure that the config file in kapteyn gets overriden
-    config_path = os.path.join(local_dir, 'config.conf')
+    
+    config_path = os.path.join(local_dir, 'config')
     f= open(config_path,'r')
     config= json.load(f)
     f.close()
     #Create list of PIDs and obsIDs directories created with the number of files inside
     obs_IDs = {}
+    #List of tupples to remove empty directories at the end
+    not_completed = []
     connect = sqlite3.connect('Database.db')
     table_names = sqlite_get_tables(connect)
     tables = {}
@@ -108,10 +128,10 @@ def update_config_after_run(local_dir):
         for j in ObsIDs:
             obsID_path = os.path.join(obsID_path, j) #Get list of individual images in directory
             nr_of_images = os.listdir(obsID_path)
-            nr_expected = check_obs(j)
-            if len(nr_of_images)==nr_expected:
+            nr_expected = check_obs(j,tables)
+            if len(nr_of_images)==nr_expected:#obsID completed
                 #Modify config
-                config['Completed_obsID'].append(j):
+                config['Completed_obsID'].append(j)
                 config['To_be_completed_obsID'].remove(j)
                 #Modify Databse 
                 tables['Observations'][k]['missing_obsIDs'].remove(str(j)) #Append log sheet and so on
@@ -120,21 +140,23 @@ def update_config_after_run(local_dir):
                     move_from_Obs_to_completed(connect,tables, k) #Remove PID entry
                 #Remove obsID from schedule
                 connect.execute("DELETE from {} where {}={}".format('Schedule', 'obsID', j))
-            if len(nr_of_images) == 0:
-                pass
-
-            else:
+            if len(nr_of_images) == 0: #obsID didnt start
+                not_completed.append((i, j)) #(PID, obsID)
+            else: #obsID partially completed
                 for x in range(len(tables['Schedule'])):
                     if tables['Schedule'][x]['obsID'] == j:
-                        tables['Schedule'][x]['exposure'] -= nr_of_images
+                        #Remove images already taken from obsID
+                        tables['Schedule'][x]['exposure'] -= nr_of_images #TODO: Acconut for dark and bias
                         change_sqlite_row(connect, 'Schedule', 'obsID', j,'exposure', tables['Schedule'][x]['exposure'])
                         break
+    for i in not_completed: #Removes all contentless folders
+        os.rmdir(os.path.join(im_path, i[0], i[1]))
 
     update_config(local_dir,config)
 
 
 
-def move_from_Obs_to_completed(connect,Database, index): #FIXME: These dont replace spec elements
+def move_from_Obs_to_completed(connect,tables, index): #FIXME: These dont replace spec elements
     """Database - dict of database content
     k - row index of Observations with PID to be moved from table Observations to Completed"""
     connect.execute("DELETE from {} where {}={}".format('Observations', 'PID', tables['Observations'][index]['PID']))
@@ -152,10 +174,12 @@ def change_sqlite_row(connect, table,row_identifier,row_identifier_value,value_i
 
 
 
-def check_obs(obsID)#TODO:
+def check_obs(obsID,tables):#TODO:
     """Function to check if the observation (obsID) was completed based on the number of images in the file directory"""
     #TODO: somehow check against obsID
     nr_of_bias = 3
     nr_of_dark = 3
-    nr_of_light =  
-    return nr_expected 
+    for x in range(len(tables['Schedule'])):
+        if tables['Schedule'][x]['obsID'] == obsID:
+            nr_of_light = tables['Schedule'][x]['exposures']
+    return nr_of_light - nr_of_bias -nr_of_dark

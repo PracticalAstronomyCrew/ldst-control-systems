@@ -220,7 +220,7 @@ def sqlite_remove_row(connect, table, Identifier_string, Identifier_value):
     """table ---> table to be modified
     Identifier_string --> the header from which the row can be recognized 
     Identifier_value --> The value of the header which identifies the row"""
-    connect.execute("DELETE from {} where {}={}".format(tabel, Identifier_string, Identifier_value))
+    connect.execute("DELETE from {} where {}={}".format(table, Identifier_string, Identifier_value))
 
 def sqlite_get_tables(conn):
     """
@@ -348,10 +348,13 @@ def create_new_interpolation_dataset(dir, remove = True):
     (However further cliping i.e. using every 3rd entry is recommended)
     '''''
     #Download past data (on my device 132sec)
+    print('Retrieving files')
     get_sky_bright_hist(dir)
-    #Load the csv's into ram''
+    #Load the csv's into ram
+    print('loading csvs')
     dat = load_all_csv(dir)
     #Create datetime objects
+    print('Modifying datetime objects')
     for key in dat.keys():
         try:
             temp = [np.array([i[0].split(';') for i in dat[key][35:]]).transpose()[j] for j in (1,2,-1)]
@@ -360,6 +363,7 @@ def create_new_interpolation_dataset(dir, remove = True):
         dat[key] = [[dt.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.000') for x in temp[0]], temp[1], temp[2]]
     #Append relevant parameters This takes long! 2000s on  my device
     location = EarthLocation(53.3845258962902, 6.23475766593151)
+    print('Creating interpolation values')
     for key in dat:
         time = Time(dat[key][0])
         altaz = AltAz(location=location, obstime=time)
@@ -371,24 +375,25 @@ def create_new_interpolation_dataset(dir, remove = True):
         dat[key].append(sun)
     # now dat is a dict containing transposed csv type lists with contents: [datetime object, Temp, mag/arcsec^2, moon alt, moon phase, sun alt]  
     #We now overwrite the csv's with the newly created data
-    overwrite_dir('./sky_bright', dat)
-    print('Now the data should be in csv format, check it!')
+    print('Overwriting directory')
+    overwrite_dir(dir, dat) #NOT IN CSV format! but transposed
     #   Clipping data
     #First change data type of the suns altitude to decide where to clip
     data = load_all_csv(dir)
     csv_data = [[],[],[],[],[],[],[],[]]
+    print('Clipping data')
     for key in data:
         temp = data[key]
         temp[-1] = [float(i) for i in temp[-1]]
         j = None #Something weird happends with the below loop
         k = None
-        for j in range(len(temp[-1])): #
+        for j in range(len(temp[-1])): #Here we are keeping index of the suns altitude
             if temp[-1][j] < 1:
                 break #J will keep the index of the last point
         if j == None:
             print('j was not defined in iteration')
             j = 0
-        for k in range(j+500,len(temp[-1])): #Starting point with conservative offset of 500 TODO: Find out how many datapoints are actually taken
+        for k in range(j+500,len(temp[-1])): #Starting point with offset of 500
             if temp[-1][k] > 1:
                 break
         if k == None:
@@ -399,21 +404,26 @@ def create_new_interpolation_dataset(dir, remove = True):
         clipped = np.array(temp,dtype=object)[::,j:k].tolist()
         #First create datetime objects
         clipped[0] = [dt.datetime.strptime(x, '%Y-%m-%d %H:%M:%S') for x in clipped[0]]
-        csv_data[0] += clipped[0] #Save datetime object as well
-        csv_data[1] += [(i.date()-i.date().replace(day=1,month=1)).day for i in clipped[0]]
-        csv_data[2] += [int((i-i.replace(hour=0, minute=0,second=0)).total_seconds()/60) for i in clipped[0]]
-        for i in range(1,len(csv_data)): #Skip dattime object 
-            csv_data[i+1] += clipped[i]
+        #Save datetime object as well
+        csv_data[0] += clipped[0] 
+        #Days since newyears
+        csv_data[1] += [(i.date()-i.date().replace(day=1,month=1)).total_seconds()//3600 for i in clipped[0]]
+        #Minutes since midnight
+        csv_data[2] += [int((i-i.replace(hour=0, minute=0,second=0)).total_seconds()//60) for i in clipped[0]]
+        for i in range(1,len(clipped)): #Skip dattime object 
+            csv_data[i+2] += clipped[i]
         #And now delete unused variables
         del temp, clipped
     
     #Now to remove the downloaded files
     if remove:
+        print('Removing spare files')
         for root, dirs, files in os.walk(dir, topdown=True):
             for i in files:
                 os.remove(os.path.join(root, i))
-
-    #And to save the file (in wrong format)
+    print('Writing to Interpolation_Data.csv')
+    #And to save the file (in csv format with headers)
+    csv_data = np.array(csv_data).transpose()
     writer = csv.writer(open(os.path.join(dir, 'Interpolation_Data.csv'), 'w'))
     writer.writerow(['#datetime obj','days from newyear','sec from midnight', 'Temperature', 'Sky Brightness mag/arcsec^2', 'Moon Alt', 'Moon Phase', 'Sun Alt'])
     for row in csv_data:
