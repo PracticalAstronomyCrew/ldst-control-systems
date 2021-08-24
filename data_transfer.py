@@ -20,6 +20,30 @@ login_params = {'user':'observer','password':''} #TODO: User must have default a
 logger = logging.getLogger('main.data')
 logger.debug("starting data logger")
 
+def backup_config(local_dir):
+    """Move the config and Database to a backup folder to see daily difference"""
+    logger.info('Moving config and database file to backups')
+    os.rename(os.path.join(local_dir, 'config', 'config'),os.path.join(local_dir, 'backups', 'configs','{}'.format(dt.date.today().strftime('%Y%m%d'))))
+    os.rename(os.path.join(local_dir, 'config', 'Database.db'),os.path.join(local_dir, 'backups','Databases', '{}.db'.format(dt.date.today().strftime('%Y%m%d'))))
+    if not os.path.isfile(os.path.join(local_dir, 'backups','Interpolation_Data.csv')):
+        logger.warning('No backup for Interpolation_Data.csv found, writing now')
+        if os.path.isfile(os.path.join(local_dir, 'sky_bright','Interpolation_Data.csv')):
+            f = open(os.path.join(local_dir, 'sky_bright','Interpolation_Data.csv'),'r')
+            cont = f.read()
+            f.close()
+            with open(os.path.join(local_dir, 'backups','Interpolation_Data.csv')) as f:
+                f.write(cont)
+        else:
+            logger.warning("No Interpolation Data present!")
+
+def get_config_database(file_path, remote_path):
+    """Retrieve new config and Database"""
+    c = Connection(host='kapteyn.astro.rug.nl', user=login_params['user'],password=login_params['password'])
+    c.get(os.path.join(remote_path, 'config','config'), os.path.join(file_path, 'config','config'))
+    c.get(os.path.join(remote_path, 'config','Databse.db'), os.path.join(file_path, 'config','Database.db'))
+
+
+
 def update_config(local_dir,content):
     """Updates config file with new parameters"""
     with open(os.path.join(local_dir, 'config','config'), 'w') as file:

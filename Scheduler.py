@@ -67,7 +67,7 @@ class Scheduling:
         
         if os.path.isfile(os.path.join(file_path, 'sky_bright', 'Interpolation_Data.csv')):
             logger.info('Interpolation data present')
-        else: #TODO: Create backup of file in case someone deletes it as a fall back and time how long it takes on the win machine
+        else: 
             logger.warning('No interpolation data present')
             if os.path.isfile(os.path.join(file_path, 'backups', 'Interpolation_Data.csv')):
                 logger.info('Found Interpolation Data backup, copying to sky_bright')

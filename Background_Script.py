@@ -62,8 +62,10 @@ passes = 0
 if __name__ == '__main__':
     while True:
         try:
-            #TODO: Make backups and retrieve config+database from kapteyn
             
+            backup_config(file_path)
+
+            get_config_database(file_path, remote_path)
             #Init of scheduling takes care of the whole process from script start to sun rise
             Scheduling(file_path,remote_path) 
 
@@ -120,7 +122,7 @@ File Handling Illustration
     │       │       └── ...
     │       ├── Databases
     │       │       └── ...
-    │       └── interpolation_Data.csv
+    │       └── Interpolation_Data.csv
     ├── config
     │       ├── config           # Config containing PID's and obsIDs as short reference
     │       ├── config.ini       # Config containing the API key for openweather
