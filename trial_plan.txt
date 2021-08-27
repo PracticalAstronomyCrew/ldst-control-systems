@@ -4,30 +4,71 @@
 ; --------------------------------------------
 ;
 ; For:           jacobus
-; Targets:       1
+; Targets:       5
 ;
 ; NOTE:          Timing features are disabled
 ;
+; Autofocus at start of run.
 ;
 ; ---------------------------------------------
 ;
-#duskflats test_plan_2-flats.txt  ; Acquire flat fields at dusk
+;WARNING: The following file path/name is not portable.
+#duskflats C:\Users\blaau\OneDrive\Desktop\test_plan-flats.txt  ; Acquire flat fields at dusk
 ;
+#autofocus
+;
+; === Target Bias (21@bin1) ===
+;
+; WARNING: Folder path is not portable.
+#dir C:\Users\blaau\OneDrive\Desktop\210502    ; Images forced to go into this folder
+#repeat 1
+#count 21
+#interval 0
+#binning 1
+#bias
+#dir    ; Revert to default images folder
+;
+; === Target Dark (5x300sec@bin1) ===
+;
+; WARNING: Folder path is not portable.
+#dir C:\Users\blaau\OneDrive\Desktop\210502    ; Images forced to go into this folder
+#repeat 1
+#count 5
+#interval 300
+#binning 1
+#dark
+#dir    ; Revert to default images folder
 ;
 ; === Target M 31 ===
 ;
-#autofocus    ; AF before target requested
 ; WARNING: Folder path is not portable.
-#dir C:\Users\blaau    ; Images forced to go into this folder
+#dir C:\Users\blaau\OneDrive\Desktop\210502    ; Images forced to go into this folder
 #repeat 1
-#count 2,2,2,2
-#filter Blue,Green,Red,Luminance
-#interval 120,120,120,120
-#binning 1,1,1,1
+#count 2
+#filter B*
+#interval 120
+#binning 1
 M 31
 #dir    ; Revert to default images folder
 ;
-#dawnflats test_plan_2-flats.txt  ; Acquire flat fields at dawn
+; === Target Dark (5x300sec@bin1) ===
+;
+#repeat 1
+#count 5
+#interval 300
+#binning 1
+#dark
+;
+; === Target Bias (21@bin1) ===
+;
+#repeat 1
+#count 21
+#interval 0
+#binning 1
+#bias
+;
+;WARNING: The following file path/name is not portable.
+#dawnflats C:\Users\blaau\OneDrive\Desktop\test_plan-flats.txt  ; Acquire flat fields at dawn
 ;
 ; -----------
 ; END OF PLAN

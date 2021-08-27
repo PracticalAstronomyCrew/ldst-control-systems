@@ -20,14 +20,14 @@ add_randome_data --> Adds 99 random observations to be scheduled for Messier obj
 """
 
 
-def add_randome_data(nr_of_PIDs):
+def add_randome_data(nr_of_PIDs): 
     """
     Helper Function adding randomised data to the Database
     -------------
     nr_of_points --> int: number of datapoints to add
     """
     #Create and add random dataset to Database:
-    connect = sqlite3.connect('Database.db') #FIXME: Rarity needs to be added or removed
+    connect = sqlite3.connect('Database.db') #FIXME: no twilight constraint (in whole scropt), no value for sky_bright constraint, no value for seeing constraint
     with connect:
         try:
             connect.execute("DROP TABLE Observations")
@@ -75,8 +75,8 @@ def add_randome_data(nr_of_PIDs):
     airmass = np.random.random(len(binning))*4
     airmass = [i if 1<i<3 else None for i in airmass]
     moon = np.random.random(size=len(Sched_obsID))
-    seeing = [None for i in binning] #TODO:
-    sky_brightness = [None for i in binning] #TODO:
+    seeing = [None for i in binning] 
+    sky_brightness = [None for i in binning] 
     Sched_Observer = [[Observer_type[i] for j in range(len(obsIDs[i]))] for i in range(len(PID))]
     Sched_Observer = [val for sublist in obsIDs for val in sublist]
     Sched_time_sensitive = [[time_sensitive[i] for j in range(len(obsIDs[i]))] for i in range(len(PID))]
@@ -185,8 +185,8 @@ def sqlite_retrieve_table(connect, table):
         if len(res) != 0:
             for row in res:
                 rows.append({dict_names[i]:row[i] for i in range(len(dict_names))})
-            #This is a sequence of if else statements given the different key's
-            rows = [{key:(rows[i][key] if key in ['Observer_type','Name','EMail','Phone','Filter','object','time_sensitive','priority','Completed_by','Submission_Date'] else None if rows[i][key]=='None' else rows[i][key][1:-2:].split(',') if key in ['obsIDs', 'missing_obsIDs'] else int(float(rows[i][key]))) for key in rows[i]} for i in range(len(rows))]
+            #This is a sequence of if else statements given the different key's as some are strings some are ints and some are list strings
+            rows = [{key:(rows[i][key] if key in ['Observer_type','Name','EMail','Phone','Filter','object','time_sensitive','priority','Completed_by','Submission_Date','twilight'] else None if rows[i][key]=='None' else rows[i][key][1:-2:].split(',') if key in ['obsIDs', 'missing_obsIDs'] else int(float(rows[i][key]))) for key in rows[i]} for i in range(len(rows))]
         else:
             dprint('file is empty')
     return rows
@@ -500,7 +500,7 @@ class SkyBrightnessConstraint(Constraint):
             self.compute = True
         # Setting up interpolators, one for Temperature and one for seeing
 
-        if self.compute: #TODO: Check array shape should already be transposed
+        if self.compute: 
             #First temperature
             temp = weather['Temperature']
             time = [(i-weather['Time'][0]).total_seconds() for i in weather['Time']] #Total seconds since starttime

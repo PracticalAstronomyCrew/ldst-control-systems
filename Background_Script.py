@@ -57,10 +57,9 @@ time.sleep(2.0)
 logger.debug('Logger is working')
 passes = 0
 
-#TODO: Figure out opening conditions
-#TODO: Fix darks and biases  
+#TODO: Filter names
 
-
+#FIXME: It appears images are written with very odd permissions
 if __name__ == '__main__':
     while True:
         try:
@@ -72,7 +71,7 @@ if __name__ == '__main__':
             #Move current config and database to backup folder
             backup_config(file_path)
             #retrieve new config and database
-            get_config_database(file_path, remote_path)
+            get_config_database(file_path, remote_path) #FIXME: In case no config is found use backup
             #Init of scheduling takes care of the whole process from script start to sun rise
             Scheduling(file_path,remote_path) 
 
@@ -119,6 +118,11 @@ if __name__ == '__main__':
 
 File Handling Illustration
 
+On kapteyn there is also .../LDST/approval for PID's which still need to be approved
+
+The backup folder will not be the same on kapteyn and lauwersoog, kapteyn will keep backups of configs prior to adding PID's whereas Lauwersoog backups will contain the config files as returned by the previous nights observing 
+
+
 .../LDST/
     ├── logs 
     │       └── YYYYMMDD         # Script Log from that date
@@ -129,7 +133,10 @@ File Handling Illustration
     │       │       └── ...
     │       ├── Databases
     │       │       └── ...
+    │       ├── Schedules
+    │       │       └── ...
     │       └── Interpolation_Data.csv
+    │       
     ├── config
     │       ├── config           # Config containing PID's and obsIDs as short reference
     │       ├── config.ini       # Config containing the API key for openweather

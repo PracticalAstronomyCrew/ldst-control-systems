@@ -3,7 +3,7 @@ import json
 from subprocess import call
 
 
-#FIXME:
+
 approval_folder = '/net/vega/data/users/observatory/LDST/approval/'
 remote_path = '/net/vega/data/users/observatory/LDST/'
 
@@ -102,7 +102,7 @@ def create_csv(file_path=None, submit_file = False):
     """
 
     if file_path==None:
-        file_path = '/tmp/proposal.csv' #TODO: Check if this is acceptable
+        file_path = '/tmp/proposal.csv'
     elif submit_file:
         if len(file_path.split('/'))<2:
             print('Please provide a full filepath to avoid problems')
@@ -127,7 +127,7 @@ def create_csv(file_path=None, submit_file = False):
                         #Saves file stops script so user can edit file in own editor
                         print('The file has been saved under {}'.format(os.path.abspath(file_path)))
                         print('You can now download it and edit it in excel or alike')
-                        print('To submit this file rerun the script with the filepath and flag: --submit=True') #TODO: Check that the flag is correct
+                        print('To submit this file rerun the script with the filepath and flag: --submit=True')
                         sys.exit(0)
                     else:
                         call([editor, file_path])
@@ -166,7 +166,7 @@ def create_csv(file_path=None, submit_file = False):
             add_to_approval_file(file_path)
         elif res == 1:
             print('The file is saved under {}'.format(os.path.abspath(file_path)))
-            print('To submit this file rerun the script with the filepath and flag: --submit=True') #TODO: Check that the flag is correct
+            print('To submit this file rerun the script with the filepath and flag: --submit=True')
             sys.exit(0)
         elif res == 2:
             while True:
@@ -177,7 +177,7 @@ def create_csv(file_path=None, submit_file = False):
                     sys.exit(0)
                 elif res =='n':
                     print('The file is saved under {}'.format(os.path.abspath(file_path)))
-                    print('To submit this file rerun the script with the filepath and flag: --submit=True') #TODO: Check that the flag is correct
+                    print('To submit this file rerun the script with the filepath and flag: --submit=True') 
                     sys.exit(0)
             
             
@@ -192,7 +192,7 @@ def add_to_approval_file(file_path):
     if not os.path.isfile(os.path.join(remote_path,'config', 'config')):
         print('Warning: Please contact the person in charge of the Observatory the config files can not be found, your request is located in {}'.format(file_path))
         sys.exit(0)
-    f= open(os.path.join(remote_path,'config', 'config'),'r') #TODO : Check these files
+    f= open(os.path.join(remote_path,'config', 'config'),'r')
     config= json.load(f)
     f.close()
     call('cp {} {}'.format(file_path, os.path.join(approval_folder, str(config['PID'])+'.csv')))

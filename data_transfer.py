@@ -51,7 +51,7 @@ def update_config(local_dir,content):
     with open(os.path.join(local_dir, 'config','config'), 'w') as file:
         json.dump(content, file)
 
-def send_results(local_dir,remote_dir):#TODO: Enable ssh keys
+def send_results(local_dir,remote_dir):
     """Creates ssh connection to kapteyn and sends files from and to above specified filepaths"""
     gate = Connection(host='kapteyn.astro.rug.nl', user='telescoop', forward_agent = True, connect_kwargs = {'allow_agent':True})
     c = Connection(host='virgo11', user='telescoop',gateway=gate, forward_agent = True, connect_kwargs = {'allow_agent':True})
@@ -81,7 +81,6 @@ def send_dir(local_dir,remote_dir, connection):
             #Here we will issue mkdir commands
             #Check if directory exists
             res = connection.run('if [[ -d "{}" ]]; then echo "1"; else echo "0"; fi'.format(os.path.join(remote_dir,name)))
-            #TODO: CHeck the below works reliably
             if str(res.stdout).strip('\n') == '0': #returns 0 if doesnt exist
                 connection.run('mkdir {}'.format(os.path.join(remote_dir,name)))
                 files_written+=1
@@ -93,7 +92,6 @@ def send_dir(local_dir,remote_dir, connection):
             #Here we will issue send commands
             #Below checks if the file already exists
             res = connection.run('if [[ -f "{}" ]]; then echo "1"; else echo "0"; fi'.format(os.path.join(remote_dir,name)))
-            #TODO: CHeck the below works reliably
             if str(res.stdout).strip('\n') == '0': #returns 0 if doesnt exist
                 connection.put(local=os.path.join(root, name),remote=os.path.join(remote_dir,name))
                 directories_created+=1
@@ -187,7 +185,7 @@ def update_config_after_run(local_dir):
 
 
 
-def move_from_Obs_to_completed(connect,tables, index): #FIXME: These dont replace spec elements
+def move_from_Obs_to_completed(connect,tables, index):
     """Database - dict of database content
     k - row index of Observations with PID to be moved from table Observations to Completed"""
     connect.execute("DELETE from {} where {}={}".format('Observations', 'PID', tables['Observations'][index]['PID']))
@@ -195,7 +193,7 @@ def move_from_Obs_to_completed(connect,tables, index): #FIXME: These dont replac
     to_add = [tables['Observations'][index][key] for key in ['PID', 'Name', 'E-Mail', 'Phone', 'Completed_by', 'Submission_Date', 'Observer_type', 'time_sensitive', 'obsIDs', 'total_length', 'logsheet', 'Obs_days']]
     connect.execute("INSERT INTO {}  VALUES ({})".format('Completed', ','.join(to_add)))
 
-def change_sqlite_row(connect, table,row_identifier,row_identifier_value,value_identifiers, values):#FIXME: These dont replace spec elements
+def change_sqlite_row(connect, table,row_identifier,row_identifier_value,value_identifiers, values):
     """connect --> connection object
     table --> table name
     value_identifiers --> comma seperated heads
