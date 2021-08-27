@@ -15,7 +15,7 @@ import sqlite3
 
 from Helper_funcs import sqlite_get_tables,sqlite_retrieve_table
 #The below contain several folders, one for each observation, and maybe some more subfolders for each filter or config file
-login_params = {'user':'observer','password':''} #TODO: User must have default access to directory!
+login_params = {'user':'telscoop'}
 
 logger = logging.getLogger('main.data')
 logger.debug("starting data logger")
@@ -64,7 +64,6 @@ def send_dir(local_dir,remote_dir, connection):
 
     It skips all existing files as they would otherwise be overwritten so things like config and Database need to be passed seperately
     """
-    #TODO: Overwrite existing files? Remove from local device after sending? Skip if top directory exists or iterate through all?
     os.chdir(local_dir) #Moves current operating directory
     logger.debug('Moved effective directory to {}'.format(local_dir))
     for root, dirs, files in os.walk(".", topdown = False): #Walks the directory top down
@@ -99,7 +98,7 @@ def send_dir(local_dir,remote_dir, connection):
     logger.info('Moved {} files, in the process {} directories were created'.format(files_written, directories_created))
 
 def send_config(local_dir,remote_dir, connection):
-    """Sends content of config directory"""
+    """Sends content of config directory, the difference here to the script above is that this overwrites the config and database"""
     config_dir = os.path.join(local_dir, 'config')
     for root, dirs, files in os.walk(config_dir, topdown = False):
         for name in files:
@@ -152,7 +151,7 @@ def update_config_after_run(local_dir):
         for j in ObsIDs:
             obsID_path = os.path.join(obsID_path, j) #Get list of individual images in directory
             nr_of_images = os.listdir(obsID_path)
-            nr_expected = check_obs(j,tables)
+            nr_expected = check_obs(j,tables) 
             if len(nr_of_images)==nr_expected:#obsID completed
                 #Modify config
                 config['Completed_obsID'].append(j)
@@ -170,9 +169,10 @@ def update_config_after_run(local_dir):
                 for x in range(len(tables['Schedule'])):
                     if tables['Schedule'][x]['obsID'] == j:
                         #Remove images already taken from obsID
-                        tables['Schedule'][x]['exposure'] -= nr_of_images #TODO: Acconut for dark and bias
-                        change_sqlite_row(connect, 'Schedule', 'obsID', j,'exposure', tables['Schedule'][x]['exposure'])
-                        break
+                        if len(nr_of_images) > 0:
+                            tables['Schedule'][x]['exposure'] -= len(nr_of_images)
+                            change_sqlite_row(connect, 'Schedule', 'obsID', j,'exposure', tables['Schedule'][x]['exposure'])
+                            break
     for i in not_completed: #Removes all contentless folders
         os.rmdir(os.path.join(im_path, i[0], i[1]))
 
@@ -198,12 +198,9 @@ def change_sqlite_row(connect, table,row_identifier,row_identifier_value,value_i
 
 
 
-def check_obs(obsID,tables):#TODO:
-    """Function to check if the observation (obsID) was completed based on the number of images in the file directory"""
-    #TODO: somehow check against obsID
-    nr_of_bias = 3
-    nr_of_dark = 3
+def check_obs(obsID,tables):
+    """Function to check the number of images that are suppose to be in obsID"""
     for x in range(len(tables['Schedule'])):
         if tables['Schedule'][x]['obsID'] == obsID:
             nr_of_light = tables['Schedule'][x]['exposures']
-    return nr_of_light - nr_of_bias -nr_of_dark
+    return nr_of_light

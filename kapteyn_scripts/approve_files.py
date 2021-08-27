@@ -171,25 +171,26 @@ def create_obsID_write_to_database(config, PID):
             table = table[2::]
             for j in table: #Iterate over rows of table
                 entry= j.split(',')
-                nr_of_times = entry[4]
+                nr_of_times = entry[3]
                 #Check if it is a number or not
                 try: 
                     nr_of_times = int(nr_of_times)
                 except:
                     nr_of_times = 1
-                filters = entry[1].split(' ')
+                filters = entry[0].split(' ')
                 for l in filters:
                     new_obsids=new_obsids.append(config['obsID'])
                     indiv_obs[config['obsID']]= {   
                                                     'object': catalogue_name,
                                                     'PID': PID,
                                                     'Filter':l, 
-                                                    'exposure': entry[2], 
-                                                    'binning':entry[3], 
-                                                    'number_of_exposures':entry[4],
-                                                    'airmass':entry[5],
-                                                    'moon':entry[6],
-                                                    'seeing':entry[7],
+                                                    'exposure': entry[1], 
+                                                    'binning':entry[2], 
+                                                    'number_of_exposures':entry[3],
+                                                    'airmass':entry[4],
+                                                    'moon':entry[5],
+                                                    'seeing':entry[6],
+                                                    'twilight':entry[7]
                                                     'sky_brightness':entry[8],
                                                     'Observer_type':observer_type,
                                                     'time_sensitive':time_sensitive,

@@ -44,7 +44,7 @@ def create_sql_database():
 
     connect.execute("""CREATE TABLE Observations
             (PID, Name, EMail, Phone, Completed_by, Submission_Date, Observer_type, time_sensitive, obsIDs, missing_obsIDs, total_length, logsheet, Obs_days)""")
-    
+    #FIXME: In schedule append twilight constraint
     connect.execute("""CREATE TABLE Schedule
         (obsID, object, PID, Filter, exposure, binning, airmass, moon, seeing, sky_brightness, Observer_type, time_sensitive, Submission_Date, Completed_by, total_length, Rarity,number_of_exposures)""")
     

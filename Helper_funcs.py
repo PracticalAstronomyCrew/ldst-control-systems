@@ -536,6 +536,39 @@ class SkyBrightnessConstraint(Constraint):
             return uppermask
 
 
+class SeeingConstraint(Constraint): 
+    #TODO: just plug in your stuff and remove 'and 0==1' from the constraints in Scheduler (there is a #TODO behind it)
+    #In the csv formatter I added a line stating that seeing is not implemented yet, make sure to remove it (./kapteyn_scripts/make_proposal) second line of file_cont
+    """
+    Constrains Seeing. Maybe use: https://www.meteoblue.com/en/weather/outdoorsports/seeing/groningen_netherlands_2755251
+
+    Parameters
+    ----------
+    max : `~astropy.units.Quantity` or `None`
+        Maximum altitude of the target (inclusive). `None` indicates no limit.
+    boolean_constraint : bool
+        If True, the constraint is treated as a boolean (True for within the
+        limits and False for outside).  If False, the constraint returns a
+        float on [0, 1], where 0 is the min altitude and 1 is the max.
+    """
+
+    def __init__(self, min=None, boolean_constraint=True):
+        if max is None:
+            self.max = 90*u.deg
+        else:
+            self.max = max
+
+        self.boolean_constraint = boolean_constraint
+
+    def compute_constraint(self, times, observer, targets):
+        cached_altaz = _get_altaz(times, observer, targets)
+        alt = cached_altaz['altaz'].alt
+        if self.boolean_constraint:
+            lowermask = self.min <= alt
+            uppermask = alt <= self.max
+            return lowermask & uppermask
+        else:
+            return max_best_rescale(alt, self.min, self.max)
 
 
 

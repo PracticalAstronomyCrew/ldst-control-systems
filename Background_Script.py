@@ -29,7 +29,7 @@ import time
 import logging
 import datetime as dt
 from pynput.keyboard import Controller
-
+import subprocess
 from Scheduler import *
 from data_transfer import *
 
@@ -59,12 +59,23 @@ time.sleep(2.0)
 logger.debug('Logger is working')
 passes = 0
 
+#TODO: Add seperate folder on kapteyn for approval files
+#TODO: Fix ssh, install the required libraries to get it working with user: telscoop
+#TODO: Figure out opening conditions
+#TODO: Fix darks and biases  
+
+
 if __name__ == '__main__':
     while True:
         try:
-            
-            backup_config(file_path)
+            #Connect to vpn
+            os.chdir('C:\\Program Files\\NordVPN')
 
+            subprocess.run(['./nordvpn','-c']) #TODO: Check if this ever finished execution
+
+            #Move current config and database to backup folder
+            backup_config(file_path)
+            #retrieve new config and database
             get_config_database(file_path, remote_path)
             #Init of scheduling takes care of the whole process from script start to sun rise
             Scheduling(file_path,remote_path) 

@@ -4,7 +4,7 @@ from subprocess import call
 
 
 #FIXME:
-approval_folder = r''
+approval_folder = '/net/vega/data/users/observatory/LDST/approval/'
 remote_path = '/net/vega/data/users/observatory/LDST/'
 
 info = """----------------------------------------------------------------------------------
@@ -55,8 +55,8 @@ def create_csv(file_path=None, submit_file = False):
     file_path --> str: path on which to save a copy of the proposal file
     submit_file --> bool: wheter or not a manually filled file is supposed to be submitted
     """
-    
     file_content = """#Lauwersoog Observing Request Form
+    #Seeing not implemented yet, any value placed will be ignored!
     #All lines starting with a # are instructional comments
     #This file should be Excel Compliant, however please start in the lines below these instructional comments as otherwise parsing will not work
     #Possible Observer Types: Moderator, OA, Staff, Student (Thesis), Student, Outreach/School, Public
@@ -74,35 +74,30 @@ def create_csv(file_path=None, submit_file = False):
     #The object name should be written as catalogue identifier, space, in catalogue identifier i.e. M 31, NGC 1952
     #Flats do not need to be specified as dusk and dawn flats are taken (provided it is possible in the relevant night)
     #For all columns but the first two if the input is not an integer it will be read as not applicable or the default value will be filled
-    #For the first two collumns acceptable strings are: 
-    #Image Type = Bias, Dark, Light
-    #Filter = R*, G*, B*, H_Alpha, None
+    #For the first collumn acceptable strings are
+    #Filter = R*, G*, B*, H_Alpha, None 
+    #For the twilight constraint acceptable answers are (do keep in mind that astronomical sunset is not reached in summer, civili twilight is a constraint always imposed):
+    #Twilight = civil,nautical,astronomical
     #For the first NGC 9999, all images to be recorded require the same parameters with differnt filters so it is entered in without commas
     #For the second object NGC 9998, all images to be taken are entered seperately
     object: NGC 9999
-    Image Type, Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Min Sky Brightness
-    Bias, -, -, 1, 5, -,-,-,-
-    Dark, -, 120, 1, 5, -,-,-,-
-    Light, R* G* B*, 120, 1, 3, -, 50, -, - 
+    Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight, Min Sky Brightness
+    R* G* B*, 120, 1, 3, -, 50, -, -,-
     [EOT]
 
     object: NGC 9998
-    Image Type, Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Min Sky Brightness
-    Bias, -, -, 1, 5, -,-,-,-
-    Dark, -, 120, 1, 2, -,-,-,-
-    Dark, -, 60, 1, 1, -,-,-,-
-    Dark, -, 20, 1, 1, -,-,-,-
-    Light, H_Alpha, 120, 1, 3, -, 50, -, -
-    Light, R*, 60, 1, 1, -, 50, -, - 
-    Light, G*, 120, 1, 3, -, 80, -, -
-    Light, R*, 60, 1, 1, -, 50, -, - 
-    Light, G*, 120, 1, 3, -, 100, -, -
-    Light, B*, 20, 1, 1, -, 90, -, - 
+    Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight, Min Sky Brightness
+    H_Alpha, 120, 1, 3, -, 50, -,astronomical, -
+    R*, 60, 1, 1, -, 50, -, - 
+    G*, 120, 1, 3, -, 80, -, -
+    R*, 60, 1, 1, -, 50, -, - 
+    G*, 120, 1, 3, -, 100, -, -
+    B*, 20, 1, 1, -, 90, -, - 
     [EOT]
 
     #Add your observations below
     object:
-    Image Type, Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Min Sky Brightness
+    Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight Min Sky Brightness
 
     """
 
@@ -197,7 +192,7 @@ def add_to_approval_file(file_path):
     if not os.path.isfile(os.path.join(remote_path,'config', 'config')):
         print('Warning: Please contact the person in charge of the Observatory the config files can not be found, your request is located in {}'.format(file_path))
         sys.exit(0)
-    f= open(os.path.join(approval_folder,'config', 'config'),'r')
+    f= open(os.path.join(approval_folder,'config', 'config'),'r') #TODO : Check these files
     config= json.load(f)
     f.close()
     call('cp {} {}'.format(file_path, os.path.join(approval_folder, str(config['PID'])+'.csv')))

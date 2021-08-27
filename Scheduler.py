@@ -7,7 +7,7 @@ from astropy.time import Time
 from astroplan.scheduling import PriorityScheduler, Schedule, TransitionBlock, Transitioner
 from astroplan import ObservingBlock, FixedTarget, Observer
 from astroplan import AltitudeConstraint,AtNightConstraint,MoonIlluminationConstraint, AirmassConstraint
-from Helper_funcs import RainConstraint, SkyBrightnessConstraint
+from Helper_funcs import RainConstraint, SkyBrightnessConstraint, SeeingConstraint
 from astroplan.plots import plot_schedule_airmass
 
 
@@ -179,8 +179,17 @@ class Scheduling:
                 constraints.append(AirmassConstraint(max=image['airmass']))
             if image['moon']!=None:
                 constraints.append(MoonIlluminationConstraint(max=image['moon']))
-            if image['seeing']!=None:
-                pass #TODO: Create custom constraint
+            if image['twilight']!=None:
+                if image['twilight']=='astronomical':
+                    constraints.append(AtNightConstraint.twilight_astronomical())
+                elif image['twilight']=='nautical':
+                    constraints.append(AtNightConstraint.twilight_nautical())
+                elif image['twilight']=='civil':
+                    pass
+                else:
+                    logger.warning('Twilight {} not recognized for obsID {}'.format(image['twilight'], config['obsID']))
+            if image['seeing']!=None and 0==1:#TODO: remove 0==1 to get seeing to work
+                constraints.append(SeeingConstraint(max=image['seeing']))
             if image['sky_brightness']!=None:
                 constraints.append(SkyBrightnessConstraint(weather=self.weather_cond,min=image['sky_brightness']))
 
@@ -325,9 +334,9 @@ def assign_priority(obj): #FIXME: Adapt values
     if obj['time_sensitive'] == 'Yes':
         priority += 10
     #Checking who created the querry
-    observer_dict =  {'Moderator':10, 'OA':1, 'Staff':0.5,'Student (Thesis)':0.4,'Student': 0.3,'Outreach/schools':0.2,'Public':0.1}
+    observer_dict =  {'Moderator':10, 'OA':1, 'Staff':0.5,'Student (Thesis)':0.4,'Student(Thesis)':0.4,'Student': 0.3,'Outreach/schools':0.2,'Public':0.1}
     for key in observer_dict:
-        if obj['Observer_type'] == key:
+        if obj['Observer_type'].strip(' ').upper() == key.strip(' ').upper():
             priority += 5*observer_dict[key]
         #Checking for rarity of observation
     boundary = [0,1,5,10,100]
