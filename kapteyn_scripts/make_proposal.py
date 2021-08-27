@@ -183,7 +183,7 @@ def create_csv(file_path=None, submit_file = False):
             
 
 def add_to_approval_file(file_path):
-    """Adds request to folder containing all approval files and index"""
+    """Adds request to folder containing all approval files"""
     while True:
         if not os.path.isfile(file_path): #A file check to be sure
             file_path = input('The file can not be found, please enter the full file path\n')
@@ -192,7 +192,7 @@ def add_to_approval_file(file_path):
     if not os.path.isfile(os.path.join(remote_path,'config', 'config')):
         print('Warning: Please contact the person in charge of the Observatory the config files can not be found, your request is located in {}'.format(file_path))
         sys.exit(0)
-    f= open(os.path.join(approval_folder,'config', 'config'),'r') #TODO : Check these files
+    f= open(os.path.join(remote_path,'config', 'config'),'r') #TODO : Check these files
     config= json.load(f)
     f.close()
     call('cp {} {}'.format(file_path, os.path.join(approval_folder, str(config['PID'])+'.csv')))

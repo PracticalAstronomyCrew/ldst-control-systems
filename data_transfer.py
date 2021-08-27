@@ -15,7 +15,6 @@ import sqlite3
 
 from Helper_funcs import sqlite_get_tables,sqlite_retrieve_table
 #The below contain several folders, one for each observation, and maybe some more subfolders for each filter or config file
-login_params = {'user':'telscoop'}
 
 logger = logging.getLogger('main.data')
 logger.debug("starting data logger")
@@ -38,9 +37,12 @@ def backup_config(local_dir):
 
 def get_config_database(file_path, remote_path):
     """Retrieve new config and Database"""
-    c = Connection(host='kapteyn.astro.rug.nl', user=login_params['user'],password=login_params['password'])
+    gate = Connection(host='kapteyn.astro.rug.nl', user='telescoop', forward_agent = True, connect_kwargs = {'allow_agent':True})
+    c = Connection(host='virgo11', user='telescoop',gateway=gate, forward_agent = True, connect_kwargs = {'allow_agent':True})
+    c.open()
     c.get(os.path.join(remote_path, 'config','config'), os.path.join(file_path, 'config','config'))
     c.get(os.path.join(remote_path, 'config','Databse.db'), os.path.join(file_path, 'config','Database.db'))
+    c.close()
 
 
 
@@ -51,9 +53,12 @@ def update_config(local_dir,content):
 
 def send_results(local_dir,remote_dir):#TODO: Enable ssh keys
     """Creates ssh connection to kapteyn and sends files from and to above specified filepaths"""
-    c = Connection(host='kapteyn.astro.rug.nl', user=login_params['user'],password=login_params['password'])
+    gate = Connection(host='kapteyn.astro.rug.nl', user='telescoop', forward_agent = True, connect_kwargs = {'allow_agent':True})
+    c = Connection(host='virgo11', user='telescoop',gateway=gate, forward_agent = True, connect_kwargs = {'allow_agent':True})
+    c.open()
     send_dir(local_dir,remote_dir,c)
     send_config(local_dir,remote_dir,c)
+    c.close()
 
 
 def send_dir(local_dir,remote_dir, connection):
@@ -115,7 +120,9 @@ def get_config(local_dir,remote_dir):
         else:
             os.mkdir(os.path.join(local_dir, 'backup'))
             os.rename(os.path.join(local_dir,'config.conf'), os.path.join(local_dir,'backup','config_{}.conf'.format((dt.date.today()-dt.timedelta(days=1)).strftime('%Y%m%d'))))
-    c = Connection(host='kapteyn.astro.rug.nl', user=login_params['user'],password=login_params['password'])
+    gate = Connection(host='kapteyn.astro.rug.nl', user='telescoop', forward_agent = True, connect_kwargs = {'allow_agent':True})
+    c = Connection(host='virgo11', user='telescoop',gateway=gate, forward_agent = True, connect_kwargs = {'allow_agent':True})
+    c.open()
     c.get(os.path.join(remote_dir, 'config.conf'), os.path.join(local_dir,'config.conf'))
     c.close()
 

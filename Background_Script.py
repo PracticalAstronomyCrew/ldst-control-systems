@@ -4,8 +4,6 @@
 """The purpose of this script is to be a constantly running background manager
 It will be running 24/7 to control execution - Or find something in windows to schedule execution - methods seem flimsy however
 """
-file_path = r'C:/LDST/YYMMDD/' #TODO:
-remote_path = r'/net/vega/data/users/observatory/LDST/YYMMDD/' #TODO:
 
 """
 Flat plan - dawn dusk
@@ -59,8 +57,6 @@ time.sleep(2.0)
 logger.debug('Logger is working')
 passes = 0
 
-#TODO: Add seperate folder on kapteyn for approval files
-#TODO: Fix ssh, install the required libraries to get it working with user: telscoop
 #TODO: Figure out opening conditions
 #TODO: Fix darks and biases  
 
