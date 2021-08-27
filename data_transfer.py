@@ -131,7 +131,7 @@ def update_config_after_run(local_dir):
     Updates Database 
     run prior to sending data to kapteyn (this will be part of data)"""
     
-    config_path = os.path.join(local_dir, 'config')
+    config_path = os.path.join(local_dir, 'config','config')
     f= open(config_path,'r')
     config= json.load(f)
     f.close()
@@ -163,7 +163,13 @@ def update_config_after_run(local_dir):
                 config['To_be_completed_obsID'].remove(j)
                 #Modify Databse 
                 tables['Observations'][k]['missing_obsIDs'].remove(str(j)) #Append log sheet and so on
+                tables['Observations'][k]['Obs_days'].append(dt.date.today()-dt.timedelta(days=1)).strftime('%Y%m%d'))
+                log_file = dt.date.today()-dt.timedelta(days=1)).strftime('%Y%m%d')
+                log_file = log_file[0:2]+log_file[4:]+'_LOGS.pdf'
+                tables['Observations'][k]['logsheet'].append(log_file)
                 change_sqlite_row(connect, 'Observations', 'PID', i, 'missing_obsIDs', '['+','.join(tables['Observations'][k]['missing_obsIDs'])+']')
+                change_sqlite_row(connect, 'Observations', 'PID', i, 'Obs_days', '['+','.join(tables['Observations'][k]['Obs_days'])+']')
+                change_sqlite_row(connect, 'Observations', 'PID', i, 'logsheet', '['+','.join(tables['Observations'][k]['logsheet'])+']')
                 if len(tables['Observations'][k]['missing_obsIDs'])==0: #Check if no more missing obsIDs
                     move_from_Obs_to_completed(connect,tables, k) #Remove PID entry
                 #Remove obsID from schedule
@@ -171,6 +177,14 @@ def update_config_after_run(local_dir):
             if len(nr_of_images) == 0: #obsID didnt start
                 not_completed.append((i, j)) #(PID, obsID)
             else: #obsID partially completed
+                #Add log file and obsday to sqlite
+                tables['Observations'][k]['Obs_days'].append(dt.date.today()-dt.timedelta(days=1)).strftime('%Y%m%d'))
+                log_file = dt.date.today()-dt.timedelta(days=1)).strftime('%Y%m%d')
+                log_file = log_file[0:2]+log_file[4:]+'_LOGS.pdf'
+                tables['Observations'][k]['logsheet'].append(log_file)
+                change_sqlite_row(connect, 'Observations', 'PID', i, 'Obs_days', '['+','.join(tables['Observations'][k]['Obs_days'])+']')
+                change_sqlite_row(connect, 'Observations', 'PID', i, 'logsheet', '['+','.join(tables['Observations'][k]['logsheet'])+']')
+                #Subtract completed exposures from obsID
                 for x in range(len(tables['Schedule'])):
                     if tables['Schedule'][x]['obsID'] == j:
                         #Remove images already taken from obsID

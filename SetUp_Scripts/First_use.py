@@ -30,7 +30,7 @@ def create_sql_database():
     Completed will contain each individual completed PID entry
     -------------
     Schedule .headers:
-    obsID, object, PID, Filter, exposure, binning, airmass, moon, seeing, sky_brightness, Observer_type, time_sensitive, Submission_Date, Completed_by, total_length, rarity, exposures
+    obsID, object, PID, Filter, exposure, binning, airmass, moon, seeing, sky_brightness, Observer_type, time_sensitive, Submission_Date, Completed_by, total_length, Rarity,number_of_exposures, twilight
     -----------
     Observations .headers:
     PID, Name, E-Mail, Phone, Completed_by, Submission_Date, Observer_type, time_sensitive, obsIDs, missing_obsIDs, total_length, logsheet, Obs_days

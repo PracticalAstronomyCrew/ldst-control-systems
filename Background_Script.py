@@ -58,7 +58,7 @@ logger.debug('Logger is working')
 passes = 0
 
 #TODO: Filter names
-
+#TODO: Logsheet naming: YYMMDD_LOGS.pdf first find where they are tho
 #FIXME: It appears images are written with very odd permissions
 if __name__ == '__main__':
     while True:
