@@ -1,7 +1,9 @@
+#!/usr/bin/python3
 import sys
 import json
 from subprocess import call
-
+import os
+import time
 
 
 approval_folder = '/net/vega/data/users/observatory/LDST/approval/'
@@ -56,50 +58,49 @@ def create_csv(file_path=None, submit_file = False):
     submit_file --> bool: wheter or not a manually filled file is supposed to be submitted
     """
     file_content = """#Lauwersoog Observing Request Form
-    #Seeing not implemented yet, any value placed will be ignored!
-    #All lines starting with a # are instructional comments
-    #This file should be Excel Compliant, however please start in the lines below these instructional comments as otherwise parsing will not work
-    #Possible Observer Types: Moderator, OA, Staff, Student (Thesis), Student, Outreach/School, Public
-    #Below enter your information
-    Name:
-    E-Mail:
-    Phone:
-    Reason/Explanation:
-    Deadline (if applicable)(dd-mm-YYYY): 
-    Date (dd-mm-YYYY):
-    Observer Type: 
-    Time Sensitive (Yes/No): 
-    #For each object you want to observe create a new Table, an example of an observation of two non existent objects from the NGC catalogue is given below
-    #After a table for an object is completed an line with content [EOT] is required, empty lines will be ignored
-    #The object name should be written as catalogue identifier, space, in catalogue identifier i.e. M 31, NGC 1952
-    #Flats do not need to be specified as dusk and dawn flats are taken (provided it is possible in the relevant night)
-    #For all columns but the first two if the input is not an integer it will be read as not applicable or the default value will be filled
-    #For the first collumn acceptable strings are
-    #Filter = R*, G*, B*, H_Alpha, None 
-    #For the twilight constraint acceptable answers are (do keep in mind that astronomical sunset is not reached in summer, civili twilight is a constraint always imposed):
-    #Twilight = civil,nautical,astronomical
-    #For the first NGC 9999, all images to be recorded require the same parameters with differnt filters so it is entered in without commas
-    #For the second object NGC 9998, all images to be taken are entered seperately
-    object: NGC 9999
-    Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight, Min Sky Brightness
-    R* G* B*, 120, 1, 3, -, 50, -, -,-
-    [EOT]
+#Seeing not implemented yet; any value placed will be ignored!
+#All lines starting with a # are instructional comments
+#This file should be Excel Compliant; however please start in the lines below these instructional comments as otherwise parsing will not work
+#Possible Observer Types: Moderator; OA; Staff; Student (Thesis); Student; Outreach/School; Public
+#Below enter your information
+Name:
+E-Mail:
+Phone:
+Reason/Explanation:
+Deadline (if applicable)(dd-mm-YYYY): 
+Date (dd-mm-YYYY):
+Observer Type: 
+Time Sensitive (Yes/No): 
+#For each object you want to observe create a new Table; an example of an observation of two non existent objects from the NGC catalogue is given below
+#After a table for an object is completed an line with content [EOT] is required; empty lines will be ignored
+#The object name should be written as catalogue identifier; space; in catalogue identifier i.e. M 31; NGC 1952
+#Flats do not need to be specified as dusk and dawn flats are taken (provided it is possible in the relevant night)
+#For all columns but the first two if the input is not an integer it will be read as not applicable or the default value will be filled
+#For the first collumn acceptable strings are
+#Filter = Lum; R*; G*; B*; H_alpha; None 
+#For the twilight constraint acceptable answers are (do keep in mind that astronomical sunset is not reached in summer; civili twilight is a constraint always imposed):
+#Twilight = civil;nautical;astronomical
+#For the first NGC 9999; all images to be recorded require the same parameters with differnt filters so it is entered in without commas
+#For the second object NGC 9998; all images to be taken are entered seperately
+object: NGC 9999
+Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight, Min Sky Brightness
+R* G* B*, 120, 1, 3, -, 50, -, -,-
+[EOT]
 
-    object: NGC 9998
-    Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight, Min Sky Brightness
-    H_Alpha, 120, 1, 3, -, 50, -,astronomical, -
-    R*, 60, 1, 1, -, 50, -, - 
-    G*, 120, 1, 3, -, 80, -, -
-    R*, 60, 1, 1, -, 50, -, - 
-    G*, 120, 1, 3, -, 100, -, -
-    B*, 20, 1, 1, -, 90, -, - 
-    [EOT]
+object: NGC 9998
+Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight, Min Sky Brightness
+H_alpha, 120, 1, 3, -, 50, -,astronomical, -
+R*, 60, 1, 1, -, 50, -, - 
+G*, 120, 1, 3, -, 80, -, -
+R*, 60, 1, 1, -, 50, -, - 
+G*, 120, 1, 3, -, 100, -, -
+B*, 20, 1, 1, -, 90, -, - 
+[EOT]
 
-    #Add your observations below
-    object:
-    Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight Min Sky Brightness
-
-    """
+#Add your observations below
+object:
+Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phase (%), Min Seeing, Twilight, Min Sky Brightness
+"""
 
     if file_path==None:
         file_path = '/tmp/proposal.csv'
@@ -117,22 +118,23 @@ def create_csv(file_path=None, submit_file = False):
     if not submit_file:
         while True:
             # Ask which editor to use
-            res = input('Which editor would you like to use?\n0-Saves file, 1-nano, 2-vim, 3-vi')
+            res = input('Which editor would you like to use?\n0-Saves file, 1-nano, 2-vim, 3-vi\n')
             try:
                 with open(file_path, 'w') as file:
                     editor = {0:None,1:'nano',2:'vim',3:'vi'}
                     editor = editor[int(res)]
                     file.write(file_content)
-                    if editor == None:
-                        #Saves file stops script so user can edit file in own editor
-                        print('The file has been saved under {}'.format(os.path.abspath(file_path)))
-                        print('You can now download it and edit it in excel or alike')
-                        print('To submit this file rerun the script with the filepath and flag: --submit=True')
-                        sys.exit(0)
-                    else:
-                        call([editor, file_path])
-                    #Leave while loop
-                    break
+                if editor == None:
+                    #Saves file stops script so user can edit file in own editor
+                    print('The file has been saved under {}'.format(os.path.abspath(file_path)))
+                    print('You can now download it and edit it in excel or alike')
+                    print('To submit this file rerun the script with the filepath and flag: --submit=True')
+                    sys.exit(0)
+                else:
+                    #time.sleep(1)
+                    call([editor, file_path])
+                #Leave while loop
+                break
             except:
                 print('Invalid option please try again')
                 pass
@@ -141,7 +143,7 @@ def create_csv(file_path=None, submit_file = False):
         if submit_file:
             while True:
                 print('Moving file {}'.format(os.path.abspath(file_path)))
-                res = input('Is that correct and the full filepath? y-yes, n-no')
+                res = input('Is that correct and the full filepath? y-yes, n-no\n')
                 if res == 'y':
                     if os.path.isfile(file_path):
                         add_to_approval_file(file_path)
@@ -153,7 +155,7 @@ def create_csv(file_path=None, submit_file = False):
 
         #This only gets triggered if an editor was used
         while True:
-            res = input('Would you like to 0-submit the file for admission 1-save the file for later submission 2-delete the file and terminate script')
+            res = input('Would you like to 0-submit the file for admission 1-save the file for later submission 2-delete the file and terminate script\n')
             try:
                 res = int(res)
                 if res > 2: #Raise exception to be caught so that while loop restarts

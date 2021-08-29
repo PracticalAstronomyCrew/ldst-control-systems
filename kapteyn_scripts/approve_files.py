@@ -1,10 +1,11 @@
+#!/usr/bin/python3
 import sqlite3
 import os
 import json
 import sys
 import shutil
 from subprocess import call
-
+import datetime as dt
 import numpy as np
 
 # This script is for the person taking care of approving observations
@@ -52,8 +53,8 @@ def parse_approval():
         try:
             #The two lines below are the only ones which could throw an error
             index = config['To_be_approved_PID'].index(i)
-            config['To_be_approved_PID']=config['To_be_approved_PID'].pop(index)
-            config['To_be_completed_PID']=config['To_be_completed_PID'].append(i)
+            config['To_be_approved_PID'].pop(index)
+            config['To_be_completed_PID'].append(i)
         except: #This can only occure if a non standard way of adding to the config file is used
             print('PID {} was not added to config upon creation, ignored for further processing')
             with open(os.path.join(approval_folder, 'config_error.txt'), 'a') as err_file:
@@ -182,18 +183,22 @@ def create_obsID_write_to_database(config, PID):
                     nr_of_times = 1
                 filters = entry[0].split(' ')
                 for l in filters:
+                    #Below so that different notations dont mess up the scheduling
+                    filters = {'H':'H_alpha', 'R':'R*', 'G':'G*', 'B':'B*','N':'Filter 16','L':'Lum'}
+                    filter = filters[l[0].strip(' ').upper()]
+
                     new_obsids=new_obsids.append(config['obsID'])
                     indiv_obs[config['obsID']]= {   
                                                     'object': catalogue_name,
                                                     'PID': PID,
-                                                    'Filter':l, 
+                                                    'Filter':filter, 
                                                     'exposure': entry[1], 
                                                     'binning':entry[2], 
                                                     'number_of_exposures':entry[3],
                                                     'airmass':entry[4],
                                                     'moon':entry[5],
                                                     'seeing':entry[6],
-                                                    'twilight':entry[7]
+                                                    'twilight':entry[7],
                                                     'sky_brightness':entry[8],
                                                     'Observer_type':observer_type,
                                                     'time_sensitive':time_sensitive,
