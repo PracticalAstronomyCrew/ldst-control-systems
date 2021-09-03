@@ -35,7 +35,6 @@ from data_transfer import *
 file_path = os.path.abspath('C:\LDST')
 remote_path = '/net/vega/data/users/observatory/LDST/'
 
-file_path = '.' ##TODO: CHange
 if not os.path.isdir(os.path.join(file_path, 'logs')):
     os.mkdir(os.path.join(file_path, 'logs'))
 logpath = os.path.join(file_path, 'logs') 

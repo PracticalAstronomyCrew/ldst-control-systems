@@ -570,8 +570,9 @@ def get_moon_phase(day):
 if __name__ == '__main__':
     print('This will create a new interpolation dataset, are you sure you want to continue?')
     res = input('y-yes, n-no')
+    file_path = os.path.abspath('C:\LDST')
     if res == 'y':
-        create_new_interpolation_dataset('./sky_bright', remove = False)
+        create_new_interpolation_dataset(os.path.join(file_path,'sky_bright'), remove = False)
         sys.exit(0)
     else:
         sys.exit(0)
