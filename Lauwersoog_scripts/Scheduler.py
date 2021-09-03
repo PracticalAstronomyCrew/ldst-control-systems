@@ -64,8 +64,6 @@ class Scheduling:
 
     def __init__(self, file_path, remote_dir):
         """Starts pipeline scheduling execution"""
-        #Retrieve modified config and database
-        get_config(file_path,remote_dir)
 
         self.get_predicted_conditions(short=True)
         
