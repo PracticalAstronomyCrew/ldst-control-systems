@@ -29,13 +29,13 @@ MsgError(exception) { ;https://www.autohotkey.com/docs/commands/OnError.htm
 
 
 
-`:: ; Performs set-up clicking FIXME: Add AAG! Or does it auto open
+`:: ; Performs set-up clicking
 
 ;               ACP Planner: Change the program
-if WinExist("Create Plan for My Observatory") != "0x0" ;Check that Main Window Exists 
+if WinExist("ACP Observatory Control Software") != "0x0" ;Check that Main Window Exists 
 ;TODO: Not sure this always works as expected
     {
-    if WinExist("ACP Planner") ; Closes Dialog and help window
+    if WinExist("ACP Planner") ; Closes Dialog and help window #FIXME: This probably is not needed
         {
         WinActivate
         WinClose 
@@ -114,15 +114,16 @@ return
 
 -::
 if WinExist("ACP Observatory Control Software") != "0x0" ;Check that Main Window Exists 
-;TODO: Not sure this always works as expected
     {
     WinActivate ; FIXME: CHeck the button names with the window spy
     ControlClick, Telescope
     ControlClick, Connect
     ControlClick, Camera
-    ControlClick, Connect
-    ControlClick, Select the Script
-    ;AM i going to have to load a js script?
+    ControlClick, Connect ;The next steps are to load the script
+    ControlClick, Dropdown menu and select ACPSchedulertextfile
+    ControlSetText, Control, "C:\LDST\Schedule_flat.txt" ;#TODO: Control is ClassNN
+    ; Could simply create startup script and restart acp prior to observing so it always loads the script in the directory
+    ControlClick start
 
     if WinExist("ACP Planner") != "0x0" ; test for message window in case plan has been edited in window Shouldnt happeb
         {
