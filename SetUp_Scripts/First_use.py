@@ -56,7 +56,7 @@ def create_sql_database():
 def create_config():
     """Creates blank config file"""
 
-    if os.path.isfile(os.path.join(file_path, 'config')): #A file check to be sure
+    if os.path.isfile(os.path.join(file_path, 'config', 'config')): #A file check to be sure
         raise Exception('Config file already exists!')
     
     content = {}
@@ -69,7 +69,7 @@ def create_config():
     content['Completed_PID'] = []
     content['Completed_obsID'] = []
 
-    with open(os.path.join(file_path, 'config'), 'w') as file:
+    with open(os.path.join(file_path, 'config', 'config'), 'w') as file:
         json.dump(content, file)
 
 
