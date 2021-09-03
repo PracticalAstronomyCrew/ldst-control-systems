@@ -68,7 +68,7 @@ if __name__ == '__main__':
             subprocess.run(['./nordvpn','-c']) #TODO: Check if this ever finished execution
 
             #Move current config and database to backup folder
-            backup_config(file_path)
+            #backup_config(file_path)
             #retrieve new config and database
             get_config_database(file_path, remote_path) #FIXME: In case no config is found use backup
             #Init of scheduling takes care of the whole process from script start to sun rise
