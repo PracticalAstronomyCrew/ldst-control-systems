@@ -8,7 +8,8 @@ import time
 
 approval_folder = '/net/vega/data/users/observatory/LDST/approval/'
 remote_path = '/net/vega/data/users/observatory/LDST/'
-
+approval_folder='/tmp/approval'
+remote_path='/tmp/'
 info = """----------------------------------------------------------------------------------
     Usage of arguments
     --path = file path  : file path under which the file is either created or submitted from

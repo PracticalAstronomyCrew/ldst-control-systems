@@ -12,7 +12,8 @@ import numpy as np
 
 approval_folder = '/net/vega/data/users/observatory/LDST/approval/'
 remote_path = '/net/vega/data/users/observatory/LDST/'
-
+approval_folder='/tmp/approval'
+remote_path='/tmp/'
 
 
 def parse_approval(): 
@@ -150,9 +151,9 @@ def create_obsID_write_to_database(config, PID):
         Deadline = proposal[4].split(':')[1] 
     except:
         Deadline = None
-    date = proposal[6].split(':')[1]
-    observer_type = proposal[7].split(':')[1]
-    time_sensitive = proposal[8].split(':')[1]
+    date = proposal[5].split(':')[1]
+    observer_type = proposal[6].split(':')[1]
+    time_sensitive = proposal[7].split(':')[1]
     Observation = { 'PID':PID,
                     'Name':proposal[0].split(':')[1],
                     'E-Mail':proposal[1].split(':')[1],
@@ -222,6 +223,7 @@ def create_obsID_write_to_database(config, PID):
                                                     'Completed_by':Deadline,
                                                     'Rarity':None
                                                 }
+                    print(indiv_obs[config['obsID']])
                     Observation['total_length'] += int(entry[2]) #Add exposure length
                     Observation['obsIDs'].append(config['obsID'])
                     Observation['missing_obsIDs'].append(config['obsID'])

@@ -11,6 +11,7 @@ from astropy.utils import data
 import numpy as np
 
 file_path = os.path.abspath(r'C:/LDST/')
+file_path = '/tmp/'
 
 """Below First usage set up"""
 
