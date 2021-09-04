@@ -384,7 +384,7 @@ def assign_priority(obj): #FIXME: Adapt values
     priority = range_comp(boundary, priority_adder, obj['total_length'], priority)
 
         #Checking for number of dates since submission date
-    start = dt.datetime.strptime(obj['Submission_Date'], "%d-%m-%Y")
+    start = dt.datetime.strptime(obj['Submission_Date'].replace(' ', ''), "%d-%m-%Y")
     days_since_sub = abs((dt.datetime.now()-start).days)
     #Determining priority additive for days left
     boundary = [0,0,1,2,5,10,100]

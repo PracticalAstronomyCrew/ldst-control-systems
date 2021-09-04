@@ -12,8 +12,7 @@ import numpy as np
 
 approval_folder = '/net/vega/data/users/observatory/LDST/approval/'
 remote_path = '/net/vega/data/users/observatory/LDST/'
-approval_folder='/tmp/approval'
-remote_path='/tmp/'
+
 
 
 def parse_approval(): 
