@@ -136,13 +136,11 @@ def sqlite_retrieve_table(connect, table):
         for item in connect.execute('''PRAGMA table_info({});'''.format(table)).fetchall(): #Get column names
             dict_names.append(item[1])
         res = connect.execute('SELECT * FROM {}'.format(table)).fetchall()
-        print(res)
         if len(res) != 0:
             for row in res:
                 rows.append({dict_names[i]:row[i] for i in range(len(dict_names))})
-                print
             #This is a sequence of if else statements given the different key's as some are strings some are ints and some are list strings
-            rows = [{key:(rows[i][key] if key in ['Observer_type','Name','EMail','Phone','Filter','object','time_sensitive','priority','Completed_by','Submission_Date','twilight'] else None if rows[i][key]=='None' else rows[i][key][1:-2:].split(',') if key in ['obsIDs', 'missing_obsIDs'] else int(float(rows[i][key]))) for key in rows[i]} for i in range(len(rows))]
+            rows = [{key:(rows[i][key].replace(' ', '') if key in ['Observer_type','Name','EMail','Phone','Filter','object','time_sensitive','priority','Completed_by','Submission_Date','twilight'] else None if rows[i][key]=='None' else rows[i][key][1:-2:].split(',') if key in ['obsIDs', 'missing_obsIDs'] else int(float(rows[i][key]))) for key in rows[i]} for i in range(len(rows))]
         else:
             dprint('file is empty')
     return rows
