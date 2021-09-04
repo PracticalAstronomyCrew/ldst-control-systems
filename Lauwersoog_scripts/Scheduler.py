@@ -214,11 +214,13 @@ class Scheduling:
         self.scheduler = PriorityScheduler(constraints = self.global_constraints, observer=self.observer, transitioner=transitioner)
 
         self.priority_schedule = Schedule(Time(self.weather_cond['Sunset']),Time(self.weather_cond['Sunrise']))
-
-        self.schedule = self.scheduler(blocks, self.priority_schedule)
-
-        #Append extra observations without conditions to free spots of scheduler
-        self.create_extra_obs()
+        if len(blocks)>0:
+            self.schedule = self.scheduler(blocks, self.priority_schedule)
+            #Append extra observations without conditions to free spots of scheduler
+            self.create_extra_obs()
+        else:
+            logger.warning('There are no observations to be scheduled in the database!')
+            self.create_extra_obs(error=True)
 
         if save_plot:
             plt.figure(figsize = (14,6))
@@ -228,20 +230,20 @@ class Scheduling:
                 os.mkdir(os.path.join(self.file_path, 'plots'))
             plt.savefig(os.path.join(self.file_path, 'plots', dt.date.today().strftime('%Y%m%d')+'.png'))
             
-        
         return self.schedule.scheduled_blocks
 
-    def create_extra_obs(self):
-        free_time = 0
-        for i in self.schedule.open_slots:
-            time = i.duration.to_value(u.second)
-            if time > 600: #If more than 10 minutes free try to schedule something with no min conditions
-                free_time+=time
-        #TODO: Retrieve x slots to fill the time frame, constraints are set in ObservingBlock
+    def create_extra_obs(self,error=False):
+        if not error:
+            free_time = 0
+            for i in self.schedule.open_slots:
+                time = i.duration.to_value(u.second)
+                if time > 600: #If more than 10 minutes free try to schedule something with no min conditions
+                    free_time+=time
+            if not free_time > 0:
+                return 0
+        #TODO: Retrieve x slots to fill the time frame, constraints are set in ObservingBlock, check that error is covered
         to_append = []
 
-        if not free_time > 0:
-            return 0
         blocks = []
         priority = 100 #start at low priority so nothing else gets overriden
         for i in to_append:#TODO: All below
@@ -250,7 +252,10 @@ class Scheduling:
             blocks.append(b)
             priority+=1
         if len(blocks)>0: #Throws an error if passed an empty list
-            self.scheduler(blocks, self.priority_schedule)
+            if not error:
+                self.scheduler(blocks, self.priority_schedule)
+            if error:
+                self.schedule = self.scheduler(blocks, self.priority_schedule)
         
 
 
