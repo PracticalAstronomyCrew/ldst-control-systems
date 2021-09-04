@@ -484,11 +484,11 @@ class SkyBrightnessConstraint(Constraint):
             self.interp = interp1d(time[:15:], temp[:15:],kind='linear') #Only use 15 hours worth
             #Now sky brightness
             interp_dat = load_all_csv('./sky_bright') #Now the interpolation data should be the only thing there
-            for key in interp_dat:
+            for key in interp_dat: #The above returns a dict of lists, if there is a singular compiled csv as expected it will be used otherwise the most recent file will be used
                 interp_dat = interp_dat[key]
-            interp_dat = interp_dat[1::] #Remove header
+            interp_dat = np.array(interp_dat[1::]).transpose() #Remove header
             res = interp_dat[-1] #Get sky brightness values
-            interp_dat = interp_dat[:-2:] #Get data
+            interp_dat = interp_dat[:-2:].tranpose() #Get data and transpose 
             self.nndi = NearestNDInterpolator(interp_dat,res, rescale=True)
         
 
