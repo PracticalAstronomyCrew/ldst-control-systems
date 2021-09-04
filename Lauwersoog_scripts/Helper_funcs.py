@@ -486,10 +486,10 @@ class SkyBrightnessConstraint(Constraint):
             interp_dat = load_all_csv('./sky_bright') #Now the interpolation data should be the only thing there
             for key in interp_dat: #The above returns a dict of lists, if there is a singular compiled csv as expected it will be used otherwise the most recent file will be used
                 interp_dat = interp_dat[key]
-            interp_dat = np.array(interp_dat[1::]).transpose() #Remove header
+            interp_dat = np.array(interp_dat[1::],dtype=object).transpose() #Remove header
             res = interp_dat[-1] #Get sky brightness values
             interp_dat = interp_dat[:-2:].transpose() #Get data and transpose 
-            self.nndi = NearestNDInterpolator(interp_dat,res, rescale=True)
+            self.nndi = NearestNDInterpolator(interp_dat.tolist(),res.tolist(), rescale=True)
         
 
     def compute_constraint(self, times, observer, targets):
