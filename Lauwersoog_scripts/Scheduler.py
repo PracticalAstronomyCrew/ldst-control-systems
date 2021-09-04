@@ -415,15 +415,18 @@ def range_comp(ranges,priority_adder, to_check, priority):
     priority --> int/float: value to which add priority correction
     """
     backup = priority
-    for i in range(len(ranges)-1):
-        if ranges[i]<to_check<=ranges[i+1]:
-            priority += priority_adder[i]
+    if to_check!=None:    
+        for i in range(len(ranges)-1):
+            if ranges[i]<to_check<=ranges[i+1]:
+                priority += priority_adder[i]
+                return priority
+        if ranges[-1]<to_check:
+            priority += priority_adder[-1]
             return priority
-    if ranges[-1]<to_check:
-        priority += priority_adder[-1]
-        return priority
+        else:
+            dprint("couldn't add to priority no appropriate range for {}".format(to_check))
+            return backup
     else:
-        dprint("couldn't add to priority no appropriate range for {}".format(to_check))
-        return backup
+        return priority
 
 
