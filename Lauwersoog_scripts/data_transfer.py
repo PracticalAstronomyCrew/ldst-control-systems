@@ -223,3 +223,10 @@ def check_obs(obsID,tables):
         if tables['Schedule'][x]['obsID'] == obsID:
             nr_of_light = tables['Schedule'][x]['exposures']
     return nr_of_light
+
+
+if __name__=='__main__':
+    print('This is intended to be run only to set up the directory Structure!')
+    file_path = os.path.abspath('C:\LDST')
+    remote_path = '/net/vega/data/users/observatory/LDST/'
+    send_results(file_path,remote_path)
