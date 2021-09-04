@@ -61,16 +61,19 @@ passes = 0
 #FIXME: It appears images are written with very odd permissions
 if __name__ == '__main__':
     while True:
-        #try:
+
         #Connect to vpn
         os.chdir('C:\\Program Files\\NordVPN')
 
-        subprocess.run(['./nordvpn','-c']) #TODO: Check if this ever finished execution
+        subprocess.run(['./nordvpn','-c']) 
 
         #Move current config and database to backup folder
         #backup_config(file_path)
         #retrieve new config and database
         #get_config_database(file_path, remote_path) #FIXME: In case no config is found use backup
+
+        #try:
+        
         #Init of scheduling takes care of the whole process from script start to sun rise
         Scheduling(file_path) 
         sys.exit(0)

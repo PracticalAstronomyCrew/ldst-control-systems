@@ -64,7 +64,7 @@ class Scheduling:
 
     def __init__(self, file_path):
         """Starts pipeline scheduling execution"""
-
+        logger.info('Getting Weather data')
         self.get_predicted_conditions(short=True)
         
         if os.path.isfile(os.path.join(file_path, 'sky_bright', 'Interpolation_Data.csv')):
@@ -89,7 +89,7 @@ class Scheduling:
             if time_to_sleep <= 0:
                 logger.warning('Script did not wait, check why execution started late!')
             else:
-                time.sleep(time_to_sleep) #Sleeps until an hour to sunset
+                time.sleep(1) #Sleeps until an hour to sunset #TODO: Replace 1 with time_to_sleep
         else:
             logger.warning('The script reached execution after Sunset! Late start of Observation')
         
