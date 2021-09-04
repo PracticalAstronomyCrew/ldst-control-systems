@@ -424,6 +424,7 @@ def range_comp(ranges,priority_adder, to_check, priority):
             priority += priority_adder[-1]
             return priority
         else:
+            print(ranges, to_check)
             dprint("couldn't add to priority no appropriate range for {}".format(to_check))
             return backup
     else:
