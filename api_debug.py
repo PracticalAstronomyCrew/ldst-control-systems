@@ -10,7 +10,7 @@ while True:
         url= "http://api.openweathermap.org/data/2.5/onecall?lat={}&lon={}&exclude=[current,minutely,alerts]&appid={}".format(*location, api_key)
         weather = requests.get(url).json()
         exec = dt.datetime.now()
-        if count == 1:
+        if count > 0:
             diff = dt.datetime.now()-exec
             print('THe time it took: ', diff)
             sys.exit(0)
@@ -22,6 +22,9 @@ while True:
         weather_cond['Moon']=weather['daily'][0]['moon_phase']
         weather_cond['Sunset']=dt.datetime.utcfromtimestamp(weather['daily'][0]['sunset'])
         weather_cond['Sunrise']=dt.datetime.utcfromtimestamp(weather['daily'][1]['sunrise'])
-    except:
-        pass
+    except Exception as e:
+        if e == KeyboardInterrupt:
+            sys.exit(0)
+        else:
+            pass
         
