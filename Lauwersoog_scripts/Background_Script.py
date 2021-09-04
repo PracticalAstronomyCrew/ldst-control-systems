@@ -61,19 +61,20 @@ passes = 0
 #FIXME: It appears images are written with very odd permissions
 if __name__ == '__main__':
     while True:
-        try:
-            #Connect to vpn
-            os.chdir('C:\\Program Files\\NordVPN')
+        #try:
+        #Connect to vpn
+        os.chdir('C:\\Program Files\\NordVPN')
 
-            subprocess.run(['./nordvpn','-c']) #TODO: Check if this ever finished execution
+        subprocess.run(['./nordvpn','-c']) #TODO: Check if this ever finished execution
 
-            #Move current config and database to backup folder
-            #backup_config(file_path)
-            #retrieve new config and database
-            #get_config_database(file_path, remote_path) #FIXME: In case no config is found use backup
-            #Init of scheduling takes care of the whole process from script start to sun rise
-            Scheduling(file_path,remote_path) 
-
+        #Move current config and database to backup folder
+        #backup_config(file_path)
+        #retrieve new config and database
+        #get_config_database(file_path, remote_path) #FIXME: In case no config is found use backup
+        #Init of scheduling takes care of the whole process from script start to sun rise
+        Scheduling(file_path) 
+        sys.exit(0)
+        """
         except (KeyboardInterrupt, Exception) as e:
             if e == KeyboardInterrupt:
                 print('Program terminated early during scheduling, make sure to check if the configs have been modified yet!')
@@ -89,7 +90,7 @@ if __name__ == '__main__':
                     logger.warning('The program terminated 3 times, check most recent modifications!')
                     sys.exit(0)
                 #MAke some kind of message with bot or so
-
+        
         try:
             #Send observing results to kapteyn
             send_results(file_path,remote_path)
@@ -109,7 +110,7 @@ if __name__ == '__main__':
                     logger.warning('The program terminated 3 times, check most recent modifications!')
                     sys.exit(0)
                 #MAke some kind of message with bot or so
-        
+        """
 
 
 

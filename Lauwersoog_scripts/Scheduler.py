@@ -62,7 +62,7 @@ class Scheduling:
     global_constraints = [twilight, altitude]
 
 
-    def __init__(self, file_path, remote_dir):
+    def __init__(self, file_path):
         """Starts pipeline scheduling execution"""
 
         self.get_predicted_conditions(short=True)
