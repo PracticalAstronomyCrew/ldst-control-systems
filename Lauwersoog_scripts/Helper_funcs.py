@@ -488,8 +488,8 @@ class SkyBrightnessConstraint(Constraint):
                 interp_dat = interp_dat[key]
             interp_dat = np.array(interp_dat[1::],dtype=object).transpose() #Remove header
             res = interp_dat[-1] #Get sky brightness values
-            interp_dat = interp_dat[:-2:].transpose() #Get data and transpose 
-            self.nndi = NearestNDInterpolator(interp_dat.tolist(),res.tolist(), rescale=True)
+            interp_dat = interp_dat[1:-2:].transpose() #Get data and transpose 
+            self.nndi = NearestNDInterpolator(interp_dat.tolist(),res.tolist(), rescale=True) 
         
 
     def compute_constraint(self, times, observer, targets):
