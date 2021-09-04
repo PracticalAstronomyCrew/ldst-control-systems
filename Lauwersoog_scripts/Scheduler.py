@@ -122,7 +122,7 @@ class Scheduling:
         self.scheduled_blocks = self.create_priority_schedule() 
 
         logger.info('Created Schedule')
-        #FIXME: Above doesnt fill all the timeframes only the given ones, check total free time and add other obs
+
         logger.info('Creating ACP scheduler text file')
         #The below creates the ACP text file, and assigns directories to each obsID (all of which also get created)
         self.create_ACP_scheudle()
@@ -217,7 +217,7 @@ class Scheduling:
         if len(blocks)>0:
             self.schedule = self.scheduler(blocks, self.priority_schedule)
             #Append extra observations without conditions to free spots of scheduler
-            self.create_extra_obs()
+            #self.create_extra_obs() #TODO: Remove hashtag
         else:
             logger.warning('There are no observations to be scheduled in the database!')
             self.create_extra_obs(error=True)
@@ -229,8 +229,11 @@ class Scheduling:
             if not os.path.isdir(os.path.join(self.file_path, 'plots')):
                 os.mkdir(os.path.join(self.file_path, 'plots'))
             plt.savefig(os.path.join(self.file_path, 'plots', dt.date.today().strftime('%Y%m%d')+'.png'))
-            
-        return self.schedule.scheduled_blocks
+        if hasattr(self, 'schedule'):
+            return self.schedule.scheduled_blocks
+        else:
+            logger.critical('No Observations were Scheduled, please check the execution Log, script will now terminate!')
+            sys.exit(0)
 
     def create_extra_obs(self,error=False):
         if not error:
