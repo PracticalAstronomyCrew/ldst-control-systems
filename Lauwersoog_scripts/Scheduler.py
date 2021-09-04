@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 from pynput.keyboard import Controller
 
 from Helper_funcs import sqlite_retrieve_table, dprint, create_new_interpolation_dataset
-from data_transfer import update_config_after_run, get_config
+from data_transfer import update_config_after_run
 
 from requests.exceptions import ConnectionError
 #Boilerplate logging
@@ -117,7 +117,7 @@ class Scheduling:
 
         logger.info('Creating priority ordered list')
 
-        self.priority_ordered_list = self.daily_Schedule(os.path.join(file_path, 'Database.db'), 'Schedule')
+        self.priority_ordered_list = self.daily_Schedule(os.path.join(file_path,'config', 'Database.db'), 'Schedule')
         
         self.scheduled_blocks = self.create_priority_schedule() 
 
