@@ -79,7 +79,7 @@ def send_dir(local_dir,remote_dir, connection):
         directories_created = 0
         for name in dirs:
             #Here we will issue mkdir commands
-            #Check if directory exists using quick script which takes as arguments the dir path
+            #Check if directory exists using quick script which takes as arguments the dir path #FIXME: Doesnt work dont know why
             res = connection.run('{} {}'.format(os.path.join(remote_dir,'check_dir.sh'),os.path.join(remote_dir,name)))
             if str(res.stdout).strip('\n') == '0': #returns 0 if doesnt exist
                 connection.run('mkdir {}'.format(os.path.join(remote_dir,name)))
@@ -90,7 +90,7 @@ def send_dir(local_dir,remote_dir, connection):
         
         for name in files:
             #Here we will issue send commands
-            #Below checks if the file already exists
+            #Below checks if the file already exists  #FIXME: Doesnt work dont know why
             res = connection.run('{} {}'.format(os.path.join(remote_dir,'check_file.sh'),os.path.join(remote_dir,name)))
             if str(res.stdout).strip('\n') == '0': #returns 0 if doesnt exist
                 connection.put(local=os.path.join(root, name),remote=os.path.join(remote_dir,name))

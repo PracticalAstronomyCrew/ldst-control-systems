@@ -12,7 +12,6 @@ import numpy as np
 
 file_path = os.path.abspath(r'C:/LDST/')
 
-
 """Below First usage set up"""
 
 def create_sql_database():

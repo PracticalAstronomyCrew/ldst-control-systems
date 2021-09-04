@@ -13,18 +13,20 @@ import numpy as np
 approval_folder = '/net/vega/data/users/observatory/LDST/approval/'
 remote_path = '/net/vega/data/users/observatory/LDST/'
 
+
+
 def parse_approval(): 
     """Parses which files are allowed"""
     f= open(os.path.join(approval_folder, 'approved.txt'),'r')
     file= f.read().split('\n')
     f.close()
     for i in range(len(file)):
-        if file[i] == 'approved:':
+        if file[i] == 'approved':
             app_start = i+1
-        elif file[i] == 'not approved:':
+        elif file[i] == 'not approved':
             app_end = i
             not_start = i+1
-        elif file[i] == 'deferred:':
+        elif file[i] == 'deferred':
             not_end = i
             def_start = i+1
         else:
@@ -39,16 +41,27 @@ def parse_approval():
     f= open(os.path.join(remote_path,'config', 'config'),'r')
     config= json.load(f)
     f.close()
-    with open(os.path.join(remote_path, 'backups', 'configs','{}'.format(dt.date.today().strftime('%Y%m%d'))), 'w'):
+    with open(os.path.join(remote_path, 'backups', 'configs','{}'.format(dt.date.today().strftime('%Y%m%d'))), 'w') as file:
         json.dump(config, file)
+    shutil.copy2(os.path.join(remote_path,'config', 'config'),os.path.join(remote_path, 'backups', 'configs','{}'.format(dt.date.today().strftime('%Y%m%d'))))
     shutil.copy2(os.path.join(remote_path,'config', 'Database.db'),os.path.join(remote_path, 'backups', 'Databases','{}.db'.format(dt.date.today().strftime('%Y%m%d'))))
 
     #Split PID's
-    app = [int(j) for j in np.array([i.split(',') for i in app]).flatten()]
-    not_app = [int(j) for j in np.array([i.split(',') for i in not_app]).flatten()]
-    deferred = [int(j) for j in np.array([i.split(',') for i in deferred]).flatten()] #This is simply an index of the files that arent suppose to be touched
+    if len(''.join(app))>0:
+        app = [int(j) for j in np.array([i.split(',') for i in app]).flatten()]
+    else:
+        app = []
+    if len(''.join(not_app))>0:
+        not_app = [int(j) for j in np.array([i.split(',') for i in not_app]).flatten()]
+    else:
+        not_app=[]
+    if len(''.join(deferred))>0:
+        deferred = [int(j) for j in np.array([i.split(',') for i in deferred]).flatten()] #This is simply an index of the files that arent suppose to be touched
+    else:
+        deferred =[]
 
     #Most of the processing can be put into this foreloop however to make this more resistant to errors (as we are editing the main config file) several loops will be used
+    new_app = False
     for i in app:
         try:
             #The two lines below are the only ones which could throw an error
@@ -58,14 +71,16 @@ def parse_approval():
         except: #This can only occure if a non standard way of adding to the config file is used
             print('PID {} was not added to config upon creation, ignored for further processing')
             with open(os.path.join(approval_folder, 'config_error.txt'), 'a') as err_file:
-                err_file.write('\nPID: {} was not in config["To_be_approved_PID"], the main source of this error is that the file was not submitted correctly. This is to be avoided as this means that a custom PID was assigned which is not supported by the current implementation')
+                err_file.write('\nPID: {} was not in config["To_be_approved_PID"], the main source of this error is that the file was not submitted correctly. This is to be avoided as this means that a custom PID was assigned which is not supported by the current implementation'.format(i))
             #Remove from further processing
             index = app.index(i)
-            app=app.pop(index)
+            new_app=app.pop(index)
+    if type(new_app)==list:
+        app = new_app
     #We now have now created the relevant PID entries for approved applications
 
     for i in not_app:
-        config['Rejected_PID']=config['Rejected_PID'].append(i)
+        config['Rejected_PID'].append(i)
     #We now appended all the not approved observations PID's to the config file
 
     for i in app:
@@ -94,7 +109,7 @@ def parse_approval():
     for i in app:
         orig_path = os.path.join(approval_folder, str(i)+'.csv')
         approv_path = os.path.join(approval_folder, 'backups','proposals','approved',str(i)+'.csv')
-        call('mv {} {}'.format(orig_path, approv_path))
+        call(['mv',orig_path, approv_path])
 
     for i in not_app:
         orig_path = os.path.join(approval_folder, str(i)+'.csv')
@@ -120,15 +135,17 @@ def create_obsID_write_to_database(config, PID):
     """
     #Open Proposal to read relevant data
     file = open(os.path.join(approval_folder, str(PID)+'.csv'))
-    proposal = file.read().split('\n') #Removes empty lines
+    proposal = file.read().split('\n')
     file.close()
+    prop_text = []
     for i in range(len(proposal)):
         if len(proposal[i])==0: #Remove emptylines
-            proposal = proposal.pop(i)
-        elif proposal[i][0]=='#': #Remove Comment lines
-            proposal = proposal.pop(i)
-        else:
             pass
+        elif proposal[i][0]=='#': #Remove Comment lines
+            pass
+        else:
+            prop_text.append(proposal[i])
+    proposal = prop_text
     try:
         Deadline = proposal[4].split(':')[1] 
     except:
@@ -153,7 +170,7 @@ def create_obsID_write_to_database(config, PID):
     proposal = proposal[8::]
     EOT = 0
     for i in range(len(proposal)):
-        if i == '[EOT]':
+        if '[EOT]' in proposal[i]:
             EOT+=1
             if EOT == 2:
                 break #Gets index of second example, rest of file will be actual observations
@@ -170,7 +187,7 @@ def create_obsID_write_to_database(config, PID):
             #Get table only
             table = proposal[start:end:]
             #Get name
-            catalogue_name = table[0].split('\n')[1]
+            catalogue_name = table[0].split(':')[1]
             #Remove Header
             table = table[2::]
             for j in table: #Iterate over rows of table
@@ -184,10 +201,9 @@ def create_obsID_write_to_database(config, PID):
                 filters = entry[0].split(' ')
                 for l in filters:
                     #Below so that different notations dont mess up the scheduling
-                    filters = {'H':'H_alpha', 'R':'R*', 'G':'G*', 'B':'B*','N':'Filter 16','L':'Lum'}
-                    filter = filters[l[0].strip(' ').upper()]
-
-                    new_obsids=new_obsids.append(config['obsID'])
+                    filter_option = {'H':'H_alpha', 'R':'R*', 'G':'G*', 'B':'B*','N':'Filter 16','L':'Lum'}
+                    filter = filter_option[l[0].strip(' ').upper()]
+                    new_obsids.append(config['obsID'])
                     indiv_obs[config['obsID']]= {   
                                                     'object': catalogue_name,
                                                     'PID': PID,
@@ -204,10 +220,11 @@ def create_obsID_write_to_database(config, PID):
                                                     'time_sensitive':time_sensitive,
                                                     'Submission_Date':date,
                                                     'Completed_by':Deadline,
+                                                    'Rarity':None
                                                 }
-                    Observation['total_length'] += entry[2] #Add exposure length
-                    Observation['obsID']=Observation['obsID'].append(config['obsID'])
-                    Observation['missing_obsID']=Observation['missing_obsID'].append(config['missing_obsID'])
+                    Observation['total_length'] += int(entry[2]) #Add exposure length
+                    Observation['obsIDs'].append(config['obsID'])
+                    Observation['missing_obsIDs'].append(config['obsID'])
                     config['obsID'] += 1
             start = end+1 #Create new starting index after [EOT]
         else:
@@ -215,7 +232,6 @@ def create_obsID_write_to_database(config, PID):
     
     for i in new_obsids:
         indiv_obs[i]['total_length'] =  Observation['total_length'] #That is total length of PID
-        
 
     #Now we will write to each obsID to the schedule data base
     databasepath = os.path.join(remote_path, 'config', 'Database.db')
@@ -224,9 +240,9 @@ def create_obsID_write_to_database(config, PID):
 
     for i in new_obsids:
         #Get the values in the correct order
-        keys = ('object', 'PID', 'Filter', 'exposure', 'binning', 'airmass', 'moon', 'seeing', 'sky_brightness', 'Observer_type', 'time_sensitive', 'Submission_Date', 'Completed_by', 'total_length','number_of_exposures','twilight')
+        keys = ('object', 'PID', 'Filter', 'exposure', 'binning', 'airmass', 'moon', 'seeing', 'sky_brightness', 'Observer_type', 'time_sensitive', 'Submission_Date', 'Completed_by', 'total_length', 'Rarity','number_of_exposures', 'twilight')
         #first i will be the obsID
-        to_add = [i, *[new_obsids[i][key] for key in keys]]
+        to_add = [i,*[indiv_obs[i][key] for key in keys]]
         sqlite_add_to_table(connect, 'Schedule', to_add)
 
     #And each PID to the Observations database

@@ -29,7 +29,7 @@ def add_to_args(key, value):
     if key == '':
         return
     global args
-    if key in ('PATH', 'SUBMIT'):
+    if key in ('path', 'submit'):
         if value != '-':
             args[key] = [value]
     else:
@@ -39,7 +39,7 @@ def add_to_args(key, value):
 def get_arguments():
     for arg in sys.argv[1:]:
         if arg[0:2] == '--':
-            opt = arg[2:].strip().upper()
+            opt = arg[2:].strip()
             valpos = opt.find('=')
             if valpos != -1:
                 key, value = opt.split('=')
@@ -104,15 +104,23 @@ Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phas
 
     if file_path==None:
         file_path = '/tmp/proposal.csv'
-    elif submit_file:
-        if len(file_path.split('/'))<2:
+    else:
+        file_path=file_path[0]
+    if submit_file:
+        print(file_path)
+        if len(file_path[0].split('/'))<2:
             print('Please provide a full filepath to avoid problems')
             sys.exit(0)
-        if not os.path.isdir(file_path.split('/')[::-2].join('/')):
-            print('The containing folder does not appear to exist\nPlease provide an existing file path')
-        if file_path[:-4] != '.csv':
-            file_path+= file_path+'.csv'
-            print('Appended file extension, new filepath: {}'.format(os.path.abspath(file_path)))
+        while True:
+            print('Moving file {}'.format(os.path.abspath(file_path)))
+            res = input('Is that correct and the full filepath? y-yes, n-no\n')
+            if res == 'y':
+                if os.path.isfile(file_path):
+                    add_to_approval_file(file_path)
+                else:
+                    file_path = input('The file can not be found please enter the complete filepath\n')
+            elif res == 'n':
+                file_path = input('Please enter the complete file path\n')
 
     # Create file and open editor if wanted
     if not submit_file:
@@ -138,19 +146,6 @@ Filter, Exposure Time (s), Binning, Number of Images, Max Airmass, Max Moon phas
             except:
                 print('Invalid option please try again')
                 pass
-        
-        #If the file is to be submitted only
-        if submit_file:
-            while True:
-                print('Moving file {}'.format(os.path.abspath(file_path)))
-                res = input('Is that correct and the full filepath? y-yes, n-no\n')
-                if res == 'y':
-                    if os.path.isfile(file_path):
-                        add_to_approval_file(file_path)
-                    else:
-                        file_path = input('The file can not be found please enter the complete filepath\n')
-                elif res == 'n':
-                    file_path = input('Please enter the complete file path\n')
 
 
         #This only gets triggered if an editor was used
@@ -197,14 +192,15 @@ def add_to_approval_file(file_path):
     f= open(os.path.join(remote_path,'config', 'config'),'r')
     config= json.load(f)
     f.close()
-    call('cp {} {}'.format(file_path, os.path.join(approval_folder, str(config['PID'])+'.csv')))
+    call(['cp', '{}'.format(file_path), '{}'.format(os.path.join(approval_folder, str(config['PID'])+'.csv'))])
     #Obs ID will be assigned after approval
     #Unrealized PID's will not be reassigned
     config['To_be_approved_PID'].append(config['PID'])
     print('Your assigned PID is: {}'.format(config['PID']))
     print('You will soon be contacted about your observation')
     config['PID'] += 1
-    update_config(config)
+    update_config(remote_path,config)
+    sys.exit(0)
 
 
 def update_config(local_dir,content):
@@ -215,16 +211,14 @@ def update_config(local_dir,content):
 
 def main():
     get_arguments()
-
-    if 'PATH' in args:
-        file_path = args['PATH']
+    if 'path' in args:
+        file_path = args['path']
     else:
         file_path = None
-    if 'SUBMIT' in args:
-        submit_file = args['SUBMIT']
+    if 'submit' in args:
+        submit_file = args['submit']
     else:
         submit_file = False
-    
     create_csv(file_path=file_path, submit_file = submit_file)
 
 
