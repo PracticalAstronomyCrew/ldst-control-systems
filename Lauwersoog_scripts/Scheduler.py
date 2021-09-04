@@ -417,19 +417,14 @@ def range_comp(ranges,priority_adder, to_check, priority):
     backup = priority
     if to_check!=None:    
         for i in range(len(ranges)-1):
-            if ranges[i]<to_check<=ranges[i+1]:
+            if ranges[i]<=to_check<=ranges[i+1]:
                 priority += priority_adder[i]
                 return priority
         if ranges[-1]<to_check:
             priority += priority_adder[-1]
             return priority
         else:
-            print(ranges, to_check)
             dprint("couldn't add to priority no appropriate range for {}".format(to_check))
-            for i in range(len(ranges)-1):
-                print(ranges[i],to_check,ranges[i+1])
-                print(ranges[i]<=to_check<=ranges[i+1])
-
             return backup
     else:
         return priority
