@@ -66,12 +66,12 @@ passes = 0
 #FIXME: It appears images are written with very odd permissions
 if __name__ == '__main__':
     while True:
-
+        logger.info('Connecting to vpn, remote acces will lag')
         #Connect to vpn
         os.chdir('C:\\Program Files\\NordVPN')
 
-        subprocess.run(['./nordvpn','-c']) 
-
+        #subprocess.run(['./nordvpn','-c']) 
+        os.chdir(file_path)
         #Move current config and database to backup folder
         #backup_config(file_path)
         #retrieve new config and database

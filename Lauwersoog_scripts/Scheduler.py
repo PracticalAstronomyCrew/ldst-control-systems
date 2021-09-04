@@ -33,6 +33,7 @@ from pynput.keyboard import Controller
 from Helper_funcs import sqlite_retrieve_table, dprint, create_new_interpolation_dataset
 from data_transfer import update_config_after_run, get_config
 
+from requests.exceptions import ConnectionError
 #Boilerplate logging
 logger = logging.getLogger('main.scheduler')
 logger.debug("starting scheduler logger")
@@ -65,7 +66,17 @@ class Scheduling:
     def __init__(self, file_path):
         """Starts pipeline scheduling execution"""
         logger.info('Getting Weather data')
-        self.get_predicted_conditions(short=True)
+        while True:
+            try:
+                self.get_predicted_conditions(short=True)
+                break
+            except Exception as e:
+                if e == ConnectionError:
+                    logger.warning('API key didn`t return data, trying again (we can make 1000 API calls/day and 60 calls/min), however this error should not occure')
+                    pass
+                else:
+                    logger.warning('Unrecognized error while retrieving weather data, trying again: ', e)
+                    pass
         
         if os.path.isfile(os.path.join(file_path, 'sky_bright', 'Interpolation_Data.csv')):
             logger.info('Interpolation data present')
