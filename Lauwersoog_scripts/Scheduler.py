@@ -277,6 +277,7 @@ class Scheduling:
         #We will also take care of file handling here
         im_path = os.path.join(self.file_path, dt.date.today().strftime('%Y%m%d'))
         #Add calibration frames
+        os.mkdir(im_path)
         os.mkdir(os.path.join(im_path, 'calibration'))
         header += self.entry_layout(self,params=None,imdir=im_path,cal_st=True,cal_end=False)
         if not os.path.isdir(im_path):
