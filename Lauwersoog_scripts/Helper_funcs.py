@@ -481,7 +481,7 @@ class SkyBrightnessConstraint(Constraint):
             temp = weather['Temperature']
             time = [(i-weather['Time'][0]).total_seconds() for i in weather['Time']] #Total seconds since starttime
             self.norm = weather['Time'][0] #We are going to take this as our time starting point
-            self.interp = interp1d(time[:15:], temp[:15:],kind='linear') #Only use 15 hours worth
+            self.interp = interp1d(time, temp,kind='linear') #Only use 15 hours worth
             #Now sky brightness
             interp_dat = load_all_csv('./sky_bright') #Now the interpolation data should be the only thing there
             for key in interp_dat: #The above returns a dict of lists, if there is a singular compiled csv as expected it will be used otherwise the most recent file will be used
@@ -498,7 +498,7 @@ class SkyBrightnessConstraint(Constraint):
         if self.compute:
             days = [i.date().day-i.date().replace(day=1,month=1).day for i in times.to_datetime()] 
             secs = [int((i-i.replace(hour=0, minute=0,second=0)).total_seconds()/60) for i in times.to_datetime()]
-            Temp = self.interp([i.total_seconds() for i in (times.to_datetime()-self.norm)])
+            Temp = self.interp([(i-self.norm).total_seconds() for i in times.to_datetime()])
             altaz = AltAz(location=observer.location, obstime=times)
             moon = get_moon(times, observer.location).transform_to(altaz).alt.deg
             moon_phase = get_moon_phase(times[0].to_datetime())
