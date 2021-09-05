@@ -506,7 +506,7 @@ class SkyBrightnessConstraint(Constraint):
             sun = get_sun(times).transform_to(altaz).alt.deg
 
             sky_brightness = self.nndi(days, secs, Temp, moon,moon_phase,sun) #WHen running on windows this returns strings of floats for some reason TODO: Check this actually works
-            sky_brightness = [float(i) for i in sky_brightness]
+            sky_brightness = np.array(sky_brightness, dtype=float)
         else: #No point in computing if no min value provided
             sky_brightness = [1 for i in range(len(times))]
         print(sky_brightness)
