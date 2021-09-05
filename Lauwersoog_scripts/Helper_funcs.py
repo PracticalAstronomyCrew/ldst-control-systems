@@ -508,9 +508,8 @@ class SkyBrightnessConstraint(Constraint):
             sky_brightness = self.nndi(days, secs, Temp, moon,moon_phase,sun)
         else: #No point in computing if no min value provided
             sky_brightness = [1 for i in range(len(times))]
-        if self.boolean_constraint:
-            uppermask = sky_brightness >= self.max
-            return uppermask
+        uppermask = sky_brightness >= self.max
+        return uppermask
 
 
 class SeeingConstraint(Constraint): 
