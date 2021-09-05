@@ -480,7 +480,7 @@ class SkyBrightnessConstraint(Constraint):
             #First temperature
             temp = weather['Temperature']
             time = [(i-weather['Time'][0]).total_seconds() for i in weather['Time']] #Total seconds since starttime
-            self.norm = weather['Time'] #We are going to take this as our time starting point
+            self.norm = weather['Time'][0] #We are going to take this as our time starting point
             self.interp = interp1d(time[:15:], temp[:15:],kind='linear') #Only use 15 hours worth
             #Now sky brightness
             interp_dat = load_all_csv('./sky_bright') #Now the interpolation data should be the only thing there
