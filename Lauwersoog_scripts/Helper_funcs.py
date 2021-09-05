@@ -508,7 +508,7 @@ class SkyBrightnessConstraint(Constraint):
             sky_brightness = self.nndi(days, secs, Temp, moon,moon_phase,sun)
         else: #No point in computing if no min value provided
             sky_brightness = [1 for i in range(len(times))]
-        uppermask = sky_brightness >= self.max
+        uppermask = sky_brightness >= self.min
         return uppermask
 
 
