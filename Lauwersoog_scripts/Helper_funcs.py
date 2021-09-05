@@ -498,7 +498,7 @@ class SkyBrightnessConstraint(Constraint):
         if self.compute:
             days = [i.date().day-i.date().replace(day=1,month=1).day for i in times.to_datetime()] 
             secs = [int((i-i.replace(hour=0, minute=0,second=0)).total_seconds()/60) for i in times.to_datetime()]
-            Temp = self.interp((times.to_datetime()-self.norm).total_seconds())
+            Temp = self.interp([i..total_seconds() for i in (times.to_datetime()-self.norm)])
             altaz = AltAz(location=observer.location, obstime=times)
             moon = get_moon(times, observer.location).transform_to(altaz).alt.deg
             moon_phase = get_moon_phase(times[0].to_datetime())
