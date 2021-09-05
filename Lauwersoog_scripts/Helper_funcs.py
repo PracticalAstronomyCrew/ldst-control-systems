@@ -496,7 +496,7 @@ class SkyBrightnessConstraint(Constraint):
     def compute_constraint(self, times, observer, targets):
         #Get relevant parameters
         if self.compute:
-            days = [(i.date().day-i.date().replace(day=1,month=1)).day for i in times.to_datetime()] 
+            days = [i.date().day-i.date().replace(day=1,month=1).day for i in times.to_datetime()] 
             secs = [int((i-i.replace(hour=0, minute=0,second=0)).total_seconds()/60) for i in times.to_datetime()]
             Temp = self.interp((times.to_datetime()-self.norm).total_seconds())
             altaz = AltAz(location=observer.location, obstime=times)
