@@ -316,7 +316,7 @@ class Scheduling:
             else:
                 logger.warning('Could not append observation {}'.format(i.configuration))
         #Add calibration
-        header += self.entry_layout(self,params=None,imdir=im_path,cal_st=False,cal_end=True)
+        header += self.entry_layout(params=None,imdir=im_path,cal_st=False,cal_end=True)
         #Dawn Flat
         header += '#dawnflats Schedule_flat_{}.txt  ; Acquire flat fields at dawn\n;\n;\n'.format(dt.date.today().strftime('%Y%m%d'))
 
