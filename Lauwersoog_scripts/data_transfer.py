@@ -144,6 +144,7 @@ def update_config_after_run(local_dir):
     tables = {}
     for i in table_names:
         tables[i]=sqlite_retrieve_table(connect, i)
+        print('Table: {} with content:\n{}'.format(i,tables[i]))
     im_path = os.path.join(local_dir, (dt.date.today()).strftime('%Y%m%d')) #TODO: For debuggin removed segment after dt.date.today, place this behind: "-dt.timedelta(days=1)"
     PIDs = os.listdir(im_path) #Returns list of files/folders in dir
     for i in PIDs:
