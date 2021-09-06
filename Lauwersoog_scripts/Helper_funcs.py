@@ -183,7 +183,7 @@ def sqlite_get_tables(conn):
     conn --> sqlite3.connect(Datbase)
     """
     cursor = conn.execute("""SELECT name FROM sqlite_master 
-                            WHERE type IN ('table','view) 
+                            WHERE type IN ('table','view') 
                             AND name NOT LIKE 'sqlite_%%' 
                             ORDER BY 1;""")
                         
