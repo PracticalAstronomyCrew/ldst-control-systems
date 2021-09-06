@@ -183,10 +183,13 @@ def sqlite_get_tables(conn):
     conn --> sqlite3.connect(Datbase)
     """
     cursor = conn.execute("""SELECT name FROM sqlite_master 
-                            WHERE type IN ('table','view');""")
+                            WHERE type IN ('table','view) 
+                            AND name NOT LIKE 'sqlite_%%' 
+                            ORDER BY 1;""")
+                        
     tables = [
         v[0] for v in cursor.fetchall()
-        if v[0] != "sqlite_sequence"
+        #if v[0] != "sqlite_sequence"
     ]
     cursor.close()
     return tables
