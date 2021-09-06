@@ -279,7 +279,7 @@ class Scheduling:
         #Add calibration frames
         os.mkdir(im_path)
         os.mkdir(os.path.join(im_path, 'calibration'))
-        header += self.entry_layout(self,params=None,imdir=im_path,cal_st=True,cal_end=False)
+        header += self.entry_layout(params=None,imdir=im_path,cal_st=True,cal_end=False)
         if not os.path.isdir(im_path):
             os.mkdir(os.path.join(im_path))
         else:
