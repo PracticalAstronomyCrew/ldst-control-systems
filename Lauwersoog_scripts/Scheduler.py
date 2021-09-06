@@ -275,6 +275,8 @@ class Scheduling:
         #Dusk Flat
         header += '#duskflats Schedule_flat_{}.txt  ; Acquire flat fields at dusk\n;\n#autofocus\n;\n'.format(dt.date.today().strftime('%Y%m%d'))
         #We will also take care of the residual file handling here
+        im_path = os.path.join(self.file_path, dt.date.today().strftime('%Y%m%d'))
+        #Calibration directory
         os.mkdir(os.path.join(im_path, 'calibration'))
         header += self.entry_layout(params=None,imdir=im_path,cal_st=True,cal_end=False)
         if not os.path.isdir(im_path):
