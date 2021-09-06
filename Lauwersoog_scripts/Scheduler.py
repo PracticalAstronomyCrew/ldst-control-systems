@@ -336,6 +336,7 @@ class Scheduling:
     
     def entry_layout(self,params=None,imdir=None,cal_st=False,cal_end=False):
         """Returns string formated for ACP planner plan text file""" 
+        entry = ''
         if cal_st:
             file_path = os.path.join(imdir, 'calibration')
             entry+='; === Target Bias (21@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 21\n#interval 0\n#binning 1\n#bias\n#dir\n;'.format(file_path)
