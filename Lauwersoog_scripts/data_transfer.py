@@ -149,6 +149,7 @@ def update_config_after_run(local_dir):
     PIDs = os.listdir(im_path) #Returns list of files/folders in dir
     for i in PIDs:
         #Get PID row in database
+        print(tables)
         for k in range(len(tables['Observations'])):
             if tables['Observations'][k]['PID'] == i: #All PIDs loaded as strings
                 break #Row index k
