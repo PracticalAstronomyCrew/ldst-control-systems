@@ -184,7 +184,7 @@ def sqlite_get_tables(conn):
     """
     cursor = conn.execute("""SELECT name FROM sqlite_master 
                             WHERE type IN ('table','view) 
-                            AND name NOT LIKE 'sqlite_%' 
+                            AND name NOT LIKE 'sqlite_%%' 
                             ORDER BY 1;""")
     tables = [
         v[0] for v in cursor.fetchall()
