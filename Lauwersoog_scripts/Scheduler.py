@@ -342,7 +342,7 @@ class Scheduling:
             file_path = os.path.join(imdir, 'calibration')
             entry+='; === Target Bias (21@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 21\n#interval 0\n#binning 1\n#bias\n#dir\n;'.format(file_path)
             entry='; === Target Dark (5x300sec@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 1\n#interval 300\n#binning 1\n#dark\n#dir\n;'.format(file_path)
-        elif call_end:
+        elif cal_end:
             file_path = os.path.join(imdir, 'calibration')
             entry='; === Target Dark (5x300sec@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 1\n#interval 300\n#binning 1\n#dark\n#dir\n;'.format(file_path)
             entry+='; === Target Bias (21@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 21\n#interval 0\n#binning 1\n#bias\n#dir\n;'.format(file_path)
