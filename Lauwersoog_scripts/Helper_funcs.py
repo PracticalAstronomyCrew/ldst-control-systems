@@ -146,7 +146,6 @@ def sqlite_retrieve_table(connect, table):
     with connect:
         dict_names=[item[1] for item in connect.execute('''PRAGMA table_info({});'''.format(table)).fetchall()]
         res = connect.execute('SELECT * FROM {}'.format(table)).fetchall()
-        print(dict_names)
         if len(res) != 0:
             for row in res:
                 rows.append({dict_names[i]:row[i] for i in range(len(dict_names))})
@@ -154,7 +153,7 @@ def sqlite_retrieve_table(connect, table):
             rows = [{key:(rows[i][key].replace(' ', '') if key in ['Observer_type','Name','EMail','Phone','Filter','object','time_sensitive','priority','Completed_by','Submission_Date','twilight'] else None if rows[i][key]=='None' else rows[i][key][1:-2:].split(',') if key in ['obsIDs', 'missing_obsIDs'] else int(float(rows[i][key]))) for key in rows[i]} for i in range(len(rows))]
         else:
             dprint('file is empty')
-        print(rows)
+    connect.commit()
     os.chdir(prior_dir)
     return rows
 
@@ -166,6 +165,14 @@ def sqlite_add_to_table(connect, table, to_add):
     table --> str: table name
     to_add --> list of items for row to be added
     """
+    for id_, name, filename in connect.execute('PRAGMA database_list'):
+        if name == 'main' and filename is not None:
+            path = filename
+            break
+    prior_dir = os.getcwd()
+    
+    os.chdir(os.path.dirname(path))
+
     with connect:
         data = '('
         for i in range(len(to_add)-1): 
@@ -173,21 +180,39 @@ def sqlite_add_to_table(connect, table, to_add):
         data += "'"+str(to_add[-1])+"')"
         print("""INSERT INTO {}{} VALUES{};""".format(table, sqlite_get_columns(connect, table),data))
         connect.execute("""INSERT INTO {}{} VALUES{};""".format(table, sqlite_get_columns(connect, table),data))
-    
+    connect.commit()
+    os.chdir(prior_dir)
 
 def sqlite_get_columns(connect, table):
+    for id_, name, filename in connect.execute('PRAGMA database_list'):
+        if name == 'main' and filename is not None:
+            path = filename
+            break
+    prior_dir = os.getcwd()
+
+    os.chdir(os.path.dirname(path))
     with connect:
         res = connect.execute("""SELECT * FROM sqlite_master;""").fetchall()
     for i in res:
         if i[1]==table:
             return '('+i[-1].split('(')[-1]
-
+    connect.commit()
+    os.chdir(prior_dir)
 
 def sqlite_remove_row(connect, table, Identifier_string, Identifier_value):
     """table ---> table to be modified
     Identifier_string --> the header from which the row can be recognized 
     Identifier_value --> The value of the header which identifies the row"""
+    for id_, name, filename in connect.execute('PRAGMA database_list'):
+        if name == 'main' and filename is not None:
+            path = filename
+            break
+    prior_dir = os.getcwd()
+
+    os.chdir(os.path.dirname(path))
     connect.execute("DELETE from {} where {}={}".format(table, Identifier_string, Identifier_value))
+    connect.commit()
+    os.chdir(prior_dir)
 
 def sqlite_get_tables(conn):
     """
@@ -195,6 +220,13 @@ def sqlite_get_tables(conn):
     ----------------
     conn --> sqlite3.connect(Datbase)
     """
+    for id_, name, filename in conn.execute('PRAGMA database_list'):
+        if name == 'main' and filename is not None:
+            path = filename
+            break
+    prior_dir = os.getcwd()
+
+    os.chdir(os.path.dirname(path))
     cursor = conn.execute("""SELECT name FROM sqlite_master 
                             WHERE type IN ('table','view') 
                             AND name NOT LIKE 'sqlite_%%' 
@@ -204,9 +236,8 @@ def sqlite_get_tables(conn):
         v[0] for v in cursor.fetchall()
         #if v[0] != "sqlite_sequence"
     ]
-    cursor.close()
-    raise Exception('The percent marker is not recognized, just put in the Table names')
-    
+    os.chdir(prior_dir)
+    conn.commit()
     return tables
 
 """
