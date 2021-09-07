@@ -51,7 +51,8 @@ def create_sql_database():
     connect.execute("""CREATE TABLE Completed
         (PID, Name, EMail, Phone, Completed_by, Submission_Date, Observer_type, time_sensitive, obsIDs, total_length, logsheet, Obs_days)""")
 
-
+    connect.commit()
+    connect.close()
 
 def create_config():
     """Creates blank config file"""

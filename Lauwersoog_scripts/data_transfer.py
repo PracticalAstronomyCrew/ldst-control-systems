@@ -139,7 +139,7 @@ def update_config_after_run(local_dir):
     obs_IDs = {}
     #List of tupples to remove empty directories at the end
     not_completed = []
-    connect = sqlite3.connect('Database.db')
+    connect = sqlite3.connect(os.path.join(local_dir, 'config','Database.db'))
     table_names = ['Schedule', 'Observations', 'Completed']
     tables = {}
     for i in table_names:
