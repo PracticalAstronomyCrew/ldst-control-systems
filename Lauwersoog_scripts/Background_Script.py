@@ -97,7 +97,6 @@ if __name__ == '__main__':
                 else:
                     logger.warning('The program terminated 3 times, check most recent modifications!')
                     sys.exit(0)
-                #MAke some kind of message with bot or so
         
         try:
             #Send observing results to kapteyn
