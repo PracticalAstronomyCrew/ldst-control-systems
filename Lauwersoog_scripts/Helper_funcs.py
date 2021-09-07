@@ -192,6 +192,8 @@ def sqlite_get_tables(conn):
         #if v[0] != "sqlite_sequence"
     ]
     cursor.close()
+    raise Exception('The percent marker is not recognized, just put in the Table names')
+    
     return tables
 
 """

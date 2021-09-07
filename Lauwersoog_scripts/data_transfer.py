@@ -13,7 +13,7 @@ import logging
 import json
 import sqlite3
 
-from Helper_funcs import sqlite_get_tables,sqlite_retrieve_table
+from Helper_funcs import sqlite_retrieve_table
 #The below contain several folders, one for each observation, and maybe some more subfolders for each filter or config file
 
 logger = logging.getLogger('main.data')
@@ -140,7 +140,7 @@ def update_config_after_run(local_dir):
     #List of tupples to remove empty directories at the end
     not_completed = []
     connect = sqlite3.connect('Database.db')
-    table_names = sqlite_get_tables(connect)
+    table_names = ['Schedule', 'Observations', 'Completed']
     tables = {}
     for i in table_names:
         tables[i]=sqlite_retrieve_table(connect, i)
