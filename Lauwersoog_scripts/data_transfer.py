@@ -198,6 +198,8 @@ def update_config_after_run(local_dir):
         os.rmdir(os.path.join(im_path, i[0], i[1]))
 
     update_config(local_dir,config)
+    connect.commit()
+    connect.close()
 
 
 
