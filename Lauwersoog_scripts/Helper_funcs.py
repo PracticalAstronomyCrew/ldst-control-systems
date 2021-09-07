@@ -144,7 +144,7 @@ def sqlite_retrieve_table(connect, table):
 
     rows = []
     with connect:
-        dict_names=[item[1] for item in connect.execute('''PRAGMA table_info({});'''.format(table)).fetchall()]2
+        dict_names=[item[1] for item in connect.execute('''PRAGMA table_info({});'''.format(table)).fetchall()]
         res = connect.execute('SELECT * FROM {}'.format(table)).fetchall()
         print(dict_names)
         if len(res) != 0:
