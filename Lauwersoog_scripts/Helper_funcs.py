@@ -133,10 +133,20 @@ def sqlite_retrieve_table(connect, table):
     connect --> sqlite3.connect(Datbase)
     table --> str: table name
     """
+    #It appears there is a directory issue with sqlite so, first we get the file path and change the working directory
+    for id_, name, filename in connect.execute('PRAGMA database_list'):
+        if name == 'main' and filename is not None:
+            path = filename
+            break
+    prior_dir = os.getcwd()
+
+    os.chdir(os.path.dirname(path))
+
     rows = []
     with connect:
-        dict_names=[item[1] for item in connect.execute('''PRAGMA table_info({});'''.format(table)).fetchall()]
+        dict_names=[item[1] for item in connect.execute('''PRAGMA table_info({});'''.format(table)).fetchall()]2
         res = connect.execute('SELECT * FROM {}'.format(table)).fetchall()
+        print(dict_names)
         if len(res) != 0:
             for row in res:
                 rows.append({dict_names[i]:row[i] for i in range(len(dict_names))})
@@ -144,6 +154,8 @@ def sqlite_retrieve_table(connect, table):
             rows = [{key:(rows[i][key].replace(' ', '') if key in ['Observer_type','Name','EMail','Phone','Filter','object','time_sensitive','priority','Completed_by','Submission_Date','twilight'] else None if rows[i][key]=='None' else rows[i][key][1:-2:].split(',') if key in ['obsIDs', 'missing_obsIDs'] else int(float(rows[i][key]))) for key in rows[i]} for i in range(len(rows))]
         else:
             dprint('file is empty')
+        print(rows)
+    os.chdir(prior_dir)
     return rows
 
 def sqlite_add_to_table(connect, table, to_add):
