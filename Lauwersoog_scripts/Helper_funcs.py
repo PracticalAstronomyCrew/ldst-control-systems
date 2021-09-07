@@ -135,6 +135,7 @@ def sqlite_retrieve_table(connect, table):
     with connect:
         for item in connect.execute('''PRAGMA table_info({});'''.format(table)).fetchall(): #Get column names
             dict_names.append(item[1])
+        print(dict_names)
         res = connect.execute('SELECT * FROM {}'.format(table)).fetchall()
         if len(res) != 0:
             for row in res:
