@@ -245,12 +245,13 @@ class Scheduling:
             if not free_time > 0:
                 return 0
         #TODO: Retrieve x slots to fill the time frame, constraints are set in ObservingBlock, check that error is covered
-        to_append = []
-
+        from .Extra_obs import get_observations
+        to_append = get_observations()
+        
         blocks = []
         priority = 100 #start at low priority so nothing else gets overriden
         for i in to_append:#TODO: All below
-            config = {'filter':image['Filter'], 'tempID':image['obsID']} 
+            config = {'filter':i['Filter'], 'tempID':i['tempID']} 
             b = ObservingBlock.from_exposures(target=FixedTarget.from_name(image['object']), priority=priority, time_per_exposure=image['exposure']*u.second,number_exposures=image['number_of_exposures'], readout_time=self.read_out_time,configuration=config)
             blocks.append(b)
             priority+=1
@@ -259,6 +260,9 @@ class Scheduling:
                 self.scheduler(blocks, self.priority_schedule)
             if error:
                 self.schedule = self.scheduler(blocks, self.priority_schedule)
+        else:
+            logger.info('No extra observations added')
+        self.extra_blocks = blocks
         
 
 
@@ -313,7 +317,26 @@ class Scheduling:
                         header+=self.entry_layout(params=params,imdir=ObsID_path)
                         break #Break j loop
             elif 'tempID' in i.configuration:
-                pass #FIXME: Add other observations
+                for j in self.extra_blocks: #Iterate through list and find correct obsid, should be one of the first few as it is ordered according to priority already
+                    if i.configuration['tempID'] == j['tempID']: 
+                        params = {}
+                        params['catalogue_name'] = i.target.name
+                        params['Filter'] = i.configuration['filter']
+                        params['count'] = str(i.number_exposures)
+                        params['repeat'] = '1' 
+                        params['interval'] = i.time_per_exposure.value
+                        params['binning'] = '1'
+                        params['tempID'] = i.configuration['tempID']
+                        extra_obs_path = os.path.join(im_path, 'extra_obs')
+                        if not os.path.isdir(extra_obs_path):
+                            os.mkdir(extra_obs_path)
+                        tempID_path = os.path.join(extra_obs_path, str(params['tempID']))
+                        if not os.path.isdir(tempID_path):
+                            os.mkdir(tempID_path)
+                        else:
+                            logger.warning('tempID {} Image directory for todays run already existed!'.format(params['ObsID']))
+                        header+=self.entry_layout(params=params,imdir=tempID_path)
+                        break #Break j loop
             else:
                 logger.warning('Could not append observation {}'.format(i.configuration))
         #Add calibration
@@ -339,11 +362,11 @@ class Scheduling:
     def entry_layout(self,params=None,imdir=None,cal_st=False,cal_end=False):
         """Returns string formated for ACP planner plan text file""" 
         entry = ''
-        if cal_st:
+        if cal_st: #Calibration at start
             file_path = os.path.join(imdir, 'calibration')
             entry+='; === Target Bias (21@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 21\n#interval 0\n#binning 1\n#bias\n#dir\n;'.format(file_path)
             entry='; === Target Dark (5x300sec@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 1\n#interval 300\n#binning 1\n#dark\n#dir\n;'.format(file_path)
-        elif cal_end:
+        elif cal_end: #Calibration at end
             file_path = os.path.join(imdir, 'calibration')
             entry='; === Target Dark (5x300sec@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 1\n#interval 300\n#binning 1\n#dark\n#dir\n;'.format(file_path)
             entry+='; === Target Bias (21@bin1) ===\n;\n#dir {}\n#repeat 1\n#count 21\n#interval 0\n#binning 1\n#bias\n#dir\n;'.format(file_path)
